@@ -7,5 +7,6 @@ edition = "2018"
 
 [dependencies]
 axum = { version = "0.1", default-features = false }
-git2 = { version = "0.13", default-features = false }
+git2 = { version = "0.13", default-features = false, features = ["https"] }
+tempfile = { version = "3.2", default-features = false }
 tokio = { version = "1.8", default-features = false, features = ["rt-multi-thread", "macros"] }
