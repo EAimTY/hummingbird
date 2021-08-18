@@ -1,24 +1,27 @@
-use git2::{build::RepoBuilder, Cred, RemoteCallbacks, Repository};
+use git2::{build::RepoBuilder, Cred, RemoteCallbacks, Repository, ProxyOptions};
 use std::{fs, path};
 use tempfile::TempDir;
 
-pub struct Repo<'a> {
+pub struct Db<'a> {
     builder: RepoBuilder<'a>,
     repo: Option<Repository>,
     path: path::PathBuf,
     posts: Vec<Post>,
 }
 
-impl<'a> Repo<'a> {
-    pub async fn new(username: &'a str, token: &'a str) -> Repo<'a> {
+impl<'a> Db<'a> {
+    pub async fn new(username: &'a str, token: &'a str, proxy: &'a str) -> Db<'a> {
         let mut callbacks = RemoteCallbacks::new();
         callbacks.credentials(move |_, _, _| Cred::userpass_plaintext(username, token));
+        let mut proxy_option = ProxyOptions::new();
+        proxy_option.url(proxy);
         let mut fetch_options = git2::FetchOptions::new();
+        fetch_options.proxy_options(proxy_option);
         fetch_options.remote_callbacks(callbacks);
         let mut repo_builder = RepoBuilder::new();
         repo_builder.fetch_options(fetch_options);
         let tempdir = TempDir::new().expect("Failed to create temp directory");
-        Repo {
+        Db {
             builder: repo_builder,
             repo: None,
             path: tempdir.into_path(),
@@ -34,25 +37,28 @@ impl<'a> Repo<'a> {
         );
     }
 
-    pub async fn get_posts(&mut self) {
+    pub async fn get_posts(&mut self) -> &Vec<Post> {
         let posts_path = &mut self.path;
         posts_path.push("post");
+        let mut posts: Vec<Post> = Vec::new();
         let posts_dir = posts_path.as_path().read_dir().unwrap();
         for file in posts_dir {
             let file_path = file.unwrap().path();
             if let Some(extension) = file_path.extension() {
                 if extension == "md" {
-                    let title = String::from(file_path.file_name().unwrap().to_str().unwrap());
+                    let title = String::from(file_path.file_stem().unwrap().to_str().unwrap());
                     let content = fs::read_to_string(&file_path)
                         .expect("Something went wrong reading the file");
                     let post = Post {
                         title: title,
                         content: content,
                     };
-                    self.posts.push(post);
+                    posts.push(post);
                 }
             }
         }
+        self.posts = posts;
+        &self.posts
         /*let mut revwalk = repo.revwalk().unwrap();
         revwalk.push_head().unwrap();
         for oid in revwalk {
@@ -72,9 +78,14 @@ impl<'a> Repo<'a> {
             break;
         }*/
     }
+
+    pub fn return_post(&self) -> Vec<Post> {
+        self.posts.clone()
+    }
 }
 
-struct Post {
-    title: String,
-    content: String,
+#[derive(Clone)]
+pub struct Post {
+    pub title: String,
+    pub content: String,
 }
