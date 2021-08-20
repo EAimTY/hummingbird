@@ -1,12 +1,12 @@
 use git2::{build::RepoBuilder, Cred, ProxyOptions, RemoteCallbacks, Repository};
-use std::{fs, path};
+use std::fs;
 use tempfile::TempDir;
 
 pub struct Db<'a> {
     repo: Option<Repository>,
     url: String,
     builder: RepoBuilder<'a>,
-    path: path::PathBuf,
+    tempdir: TempDir,
     pages: Vec<Page>,
     posts: Vec<Post>,
 }
@@ -27,7 +27,7 @@ impl<'a> Db<'a> {
             repo: None,
             url: String::from(url),
             builder: repo_builder,
-            path: tempdir.into_path(),
+            tempdir: tempdir,
             pages: Vec::new(),
             posts: Vec::new(),
         }
@@ -36,7 +36,7 @@ impl<'a> Db<'a> {
     pub async fn fetch(&mut self) {
         self.repo = Some(
             self.builder
-                .clone(&self.url, self.path.as_path())
+                .clone(&self.url, self.tempdir.path())
                 .expect("Failed to clone"),
         );
         self.update_pages().await;
@@ -44,7 +44,7 @@ impl<'a> Db<'a> {
     }
 
     async fn update_pages(&mut self) {
-        let pages_dir_path = &mut self.path;
+        let pages_dir_path = &mut self.tempdir.path().to_path_buf();
         pages_dir_path.push("pages");
         let mut pages: Vec<Page> = Vec::new();
         let pages_dir = pages_dir_path.as_path().read_dir().unwrap();
@@ -67,7 +67,7 @@ impl<'a> Db<'a> {
     }
 
     async fn update_posts(&mut self) {
-        let posts_dir_path = &mut self.path;
+        let posts_dir_path = &mut self.tempdir.path().to_path_buf();
         posts_dir_path.push("posts");
         let mut posts: Vec<Post> = Vec::new();
         let posts_dir = posts_dir_path.as_path().read_dir().unwrap();
