@@ -1,5 +1,7 @@
 use crate::config;
+use anyhow::{Context, Result};
 use git2::{build::RepoBuilder, Cred, ProxyOptions, RemoteCallbacks, Repository};
+use std::ffi::OsStr;
 use std::fs;
 use tempfile::TempDir;
 
@@ -13,7 +15,12 @@ pub struct Db<'a> {
 }
 
 impl<'a> Db<'a> {
-    pub async fn new(config: &config::Config) -> Db<'a> {
+    pub async fn new(config: &config::Config) -> Result<Db<'a>> {
+        let url = config
+            .git
+            .repository
+            .clone()
+            .context("Failed to get repository from config")?;
         let mut fetch_options = git2::FetchOptions::new();
         if let Some(proxy) = config.git.proxy.clone() {
             let mut proxy_option = ProxyOptions::new();
@@ -27,42 +34,44 @@ impl<'a> Db<'a> {
                 fetch_options.remote_callbacks(callbacks);
             }
         }
-        let url = config.git.repository.clone().unwrap();
         let mut repo_builder = RepoBuilder::new();
         repo_builder.fetch_options(fetch_options);
-        let tempdir = TempDir::new().expect("Failed to create temp directory");
-        Db {
+        let tempdir = TempDir::new()?;
+        Ok(Db {
             repo: None,
             url,
             builder: repo_builder,
             tempdir: tempdir,
             pages: Vec::new(),
             posts: Vec::new(),
-        }
+        })
     }
 
-    pub async fn fetch(&mut self) {
-        self.repo = Some(
-            self.builder
-                .clone(&self.url, self.tempdir.path())
-                .expect("Failed to clone"),
-        );
-        self.update_pages().await;
-        self.update_posts().await;
+    pub async fn fetch(&mut self) -> Result<()> {
+        self.repo = Some(self.builder.clone(&self.url, self.tempdir.path())?);
+        self.update_pages().await?;
+        self.update_posts().await?;
+        Ok(())
     }
 
-    async fn update_pages(&mut self) {
+    async fn update_pages(&mut self) -> Result<()> {
         let pages_dir_path = &mut self.tempdir.path().to_path_buf();
         pages_dir_path.push("pages");
         let mut pages: Vec<Page> = Vec::new();
-        let pages_dir = pages_dir_path.as_path().read_dir().unwrap();
+        let pages_dir = pages_dir_path.as_path().read_dir()?;
         for file in pages_dir {
-            let file_path = file.unwrap().path();
+            let file_path = file?.path();
             if let Some(extension) = file_path.extension() {
                 if extension == "md" {
-                    let title = String::from(file_path.file_stem().unwrap().to_str().unwrap());
+                    let title = String::from(
+                        file_path
+                            .file_stem()
+                            .unwrap_or(OsStr::new(""))
+                            .to_str()
+                            .unwrap_or(""),
+                    );
                     let content = fs::read_to_string(&file_path)
-                        .expect("Something went wrong reading the file");
+                        .with_context(|| format!("Failed to read page: {}", &title))?;
                     let page = Page {
                         title: title,
                         content: content,
@@ -72,20 +81,27 @@ impl<'a> Db<'a> {
             }
         }
         self.pages = pages;
+        Ok(())
     }
 
-    async fn update_posts(&mut self) {
+    async fn update_posts(&mut self) -> Result<()> {
         let posts_dir_path = &mut self.tempdir.path().to_path_buf();
         posts_dir_path.push("posts");
         let mut posts: Vec<Post> = Vec::new();
-        let posts_dir = posts_dir_path.as_path().read_dir().unwrap();
+        let posts_dir = posts_dir_path.as_path().read_dir()?;
         for file in posts_dir {
-            let file_path = file.unwrap().path();
+            let file_path = file?.path();
             if let Some(extension) = file_path.extension() {
                 if extension == "md" {
-                    let title = String::from(file_path.file_stem().unwrap().to_str().unwrap());
+                    let title = String::from(
+                        file_path
+                            .file_stem()
+                            .unwrap_or(OsStr::new(""))
+                            .to_str()
+                            .unwrap_or(""),
+                    );
                     let content = fs::read_to_string(&file_path)
-                        .expect("Something went wrong reading the file");
+                        .with_context(|| format!("Failed to read post: {}", &title))?;
                     let post = Post {
                         title: title,
                         content: content,
@@ -95,6 +111,7 @@ impl<'a> Db<'a> {
             }
         }
         self.posts = posts;
+        Ok(())
         /*let mut revwalk = repo.revwalk().unwrap();
         revwalk.push_head().unwrap();
         for oid in revwalk {

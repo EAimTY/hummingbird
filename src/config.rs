@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::{fs, path::Path};
 
@@ -21,9 +22,10 @@ pub struct Settings {
 }
 
 impl Config {
-    pub fn from(config_file: String) -> Config {
+    pub fn from(config_file: String) -> Result<Config> {
         let config = fs::read_to_string(Path::new(&config_file))
-            .expect("Something went wrong reading the config file");
-        toml::from_str(&config).unwrap()
+            .context("Failed to read the config file")?;
+        let config = toml::from_str(&config)?;
+        Ok(config)
     }
 }

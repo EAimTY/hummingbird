@@ -1,4 +1,5 @@
 use crate::{config, db};
+use anyhow::Result;
 use axum::{handler::get, Router};
 use http::Uri;
 use std::ffi::OsStr;
@@ -10,9 +11,9 @@ enum Requested {
     Post,
 }
 
-pub async fn init(config: config::Config) {
-    let mut db = db::Db::new(&config).await;
-    db.fetch().await;
+pub async fn init(config: config::Config) -> Result<()> {
+    let mut db = db::Db::new(&config).await?;
+    db.fetch().await?;
     let pages = db.get_pages();
     let posts = db.get_posts();
 
@@ -44,11 +45,19 @@ pub async fn init(config: config::Config) {
             };
             match requested {
                 Requested::Page => {
-                    let title = uri.file_stem().unwrap().to_str().unwrap();
+                    let title = uri
+                        .file_stem()
+                        .unwrap_or(OsStr::new(""))
+                        .to_str()
+                        .unwrap_or("");
                     serve_page(title, pages).await
                 }
                 Requested::Post => {
-                    let title = uri.file_stem().unwrap().to_str().unwrap();
+                    let title = uri
+                        .file_stem()
+                        .unwrap_or(OsStr::new(""))
+                        .to_str()
+                        .unwrap_or("");
                     serve_post(title, posts).await
                 }
                 Requested::Other => String::from("Not Found"),
@@ -60,6 +69,7 @@ pub async fn init(config: config::Config) {
         .serve(app.into_make_service())
         .await
         .unwrap();
+    Ok(())
 }
 
 async fn serve_page(title: &str, pages: Vec<db::Page>) -> String {

@@ -3,7 +3,6 @@ use std::env;
 
 mod config;
 mod db;
-mod error;
 mod router;
 
 #[tokio::main]
@@ -27,7 +26,12 @@ async fn main() {
     let config_file = matches.opt_str("c");
     if let Some(config_file) = config_file {
         let config = config::Config::from(config_file);
-        router::init(config).await;
+        if let Ok(config) = config {
+            router::init(config).await.unwrap();
+        } else {
+            print_help(&program, opts);
+            return;
+        }
     } else {
         print_help(&program, opts);
         return;
