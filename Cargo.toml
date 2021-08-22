@@ -5,6 +5,7 @@ edition = "2018"
 
 [dependencies]
 axum = { git = "https://github.com/tokio-rs/axum.git", branch = "main", default-features = false }
+getopts = "0.2"
 git2 = { version = "0.13", features = ["https"], default-features = false }
 http = "0.2"
 rust-ini = "0.17"
