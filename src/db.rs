@@ -1,3 +1,4 @@
+use crate::config;
 use git2::{build::RepoBuilder, Cred, ProxyOptions, RemoteCallbacks, Repository};
 use std::fs;
 use tempfile::TempDir;
@@ -12,20 +13,27 @@ pub struct Db<'a> {
 }
 
 impl<'a> Db<'a> {
-    pub async fn new(url: &'a str, username: &'a str, token: &'a str, proxy: &'a str) -> Db<'a> {
-        let mut callbacks = RemoteCallbacks::new();
-        callbacks.credentials(move |_, _, _| Cred::userpass_plaintext(username, token));
-        let mut proxy_option = ProxyOptions::new();
-        proxy_option.url(proxy);
+    pub async fn new(config: &config::Config) -> Db<'a> {
         let mut fetch_options = git2::FetchOptions::new();
-        fetch_options.proxy_options(proxy_option);
-        fetch_options.remote_callbacks(callbacks);
+        if let Some(proxy) = config.git.proxy.clone() {
+            let mut proxy_option = ProxyOptions::new();
+            proxy_option.url(&proxy);
+            fetch_options.proxy_options(proxy_option);
+        }
+        if let Some(user) = config.git.user.clone() {
+            if let Some(password) = config.git.password.clone() {
+                let mut callbacks = RemoteCallbacks::new();
+                callbacks.credentials(move |_, _, _| Cred::userpass_plaintext(&user, &password));
+                fetch_options.remote_callbacks(callbacks);
+            }
+        }
+        let url = config.git.repository.clone().unwrap();
         let mut repo_builder = RepoBuilder::new();
         repo_builder.fetch_options(fetch_options);
         let tempdir = TempDir::new().expect("Failed to create temp directory");
         Db {
             repo: None,
-            url: String::from(url),
+            url,
             builder: repo_builder,
             tempdir: tempdir,
             pages: Vec::new(),

@@ -1,6 +1,7 @@
 use getopts::Options;
 use std::env;
 
+mod config;
 mod db;
 mod error;
 mod router;
@@ -10,12 +11,7 @@ async fn main() {
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
     let mut opts = Options::new();
-    opts.optopt(
-        "c",
-        "config",
-        "set config file path",
-        "CONFIG",
-    );
+    opts.optopt("c", "config", "set config file path", "CONFIG");
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(matches) => matches,
@@ -30,7 +26,8 @@ async fn main() {
     };
     let config_file = matches.opt_str("c");
     if let Some(config_file) = config_file {
-        router::init().await;
+        let config = config::Config::from(config_file);
+        router::init(config).await;
     } else {
         print_help(&program, opts);
         return;
