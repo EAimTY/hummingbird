@@ -7,7 +7,7 @@ edition = "2018"
 anyhow = "1.0"
 axum = { version = "0.2", default-features = false }
 getopts = "0.2"
-git2 = { version = "0.13", features = ["https"], default-features = false }
+git2 = { version = "0.13", features = ["https", "vendored-libgit2"], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 tempfile = "3.2"
 toml = "0.5"
