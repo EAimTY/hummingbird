@@ -6,16 +6,24 @@ use tokio::sync::{mpsc, oneshot};
 pub struct Router;
 
 impl Router {
-    pub async fn run(config: &config::Settings, op_sender: mpsc::Sender<Op>) -> Result<()> {
+    pub async fn run(settings: &config::Settings, op_sender: mpsc::Sender<Op>) -> Result<()> {
+        let update_token = settings
+            .update_token
+            .as_ref()
+            .unwrap_or(&String::new())
+            .to_string();
+
         tokio::spawn(async move {
             let op_sender_get_post = op_sender.clone();
             let op_sender_get_page = op_sender.clone();
+            let op_sender_update = op_sender.clone();
 
             let app = AxumRouter::new()
                 .route(
                     "/post/:path",
                     get(|Path(path): Path<String>| async move {
                         let op_channel = oneshot::channel();
+
                         Router::get_post(path, op_channel, op_sender_get_post).await
                     }),
                 )
@@ -23,7 +31,20 @@ impl Router {
                     "/page/:path",
                     get(|Path(path): Path<String>| async move {
                         let op_channel = oneshot::channel();
-                        Router::get_post(path, op_channel, op_sender_get_page).await
+                        
+                        Router::get_page(path, op_channel, op_sender_get_page).await
+                    }),
+                )
+                .route(
+                    "/update/:token",
+                    get(|Path(token): Path<String>| async move {
+                        let op_channel = oneshot::channel();
+
+                        if token == update_token {
+                            Router::update(op_channel, op_sender_update).await
+                        } else {
+                            String::from("failed")
+                        }
                     }),
                 );
 
@@ -64,6 +85,18 @@ impl Router {
                 })
                 .await;
         }
+        channel.1.await.unwrap_or(String::from("failed"))
+    }
+
+    async fn update(
+        channel: (oneshot::Sender<String>, oneshot::Receiver<String>),
+        op_sender: mpsc::Sender<Op>,
+    ) -> String {
+        op_sender
+            .send(Op::Update {
+                channel_sender: channel.0,
+            })
+            .await;
         channel.1.await.unwrap_or(String::from("failed"))
     }
 }

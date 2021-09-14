@@ -20,7 +20,7 @@ impl<'a> Db<'a> {
         Ok(Self { repo, posts, pages })
     }
 
-    pub async fn listen(&self, mut op_reciever: mpsc::Receiver<Op>) {
+    pub async fn listen(&mut self, mut op_reciever: mpsc::Receiver<Op>) {
         while let Some(op) = op_reciever.recv().await {
             match op {
                 Op::GetPost {
@@ -38,6 +38,14 @@ impl<'a> Db<'a> {
                     if let Some(page) = self.pages.get(&title) {
                         channel_sender.send(page.content.clone());
                     }
+                }
+                Op::Update { channel_sender } => {
+                    self.repo.fetch().unwrap();
+
+                    self.posts = self.repo.parse_posts().unwrap();
+                    self.pages = self.repo.parse_pages().unwrap();
+
+                    channel_sender.send(String::from("done"));
                 }
             }
         }

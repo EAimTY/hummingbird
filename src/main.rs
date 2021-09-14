@@ -27,7 +27,7 @@ async fn main() {
         .unwrap();
 
     match db::Db::init(&config) {
-        Ok(db) => db.listen(op_reciever).await,
+        Ok(mut db) => db.listen(op_reciever).await,
         Err(err) => {
             println!("{}", err);
             return;

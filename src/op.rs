@@ -9,4 +9,7 @@ pub enum Op {
         title: String,
         channel_sender: oneshot::Sender<String>,
     },
+    Update {
+        channel_sender: oneshot::Sender<String>,
+    },
 }
