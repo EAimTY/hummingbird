@@ -1,12 +1,7 @@
-use crate::{config, repo::Repo};
+use crate::{config, op::Op, repo::Repo};
 use anyhow::Result;
 use std::collections::HashMap;
 use tokio::sync::mpsc;
-
-pub enum DbOp {
-    GetPost(String),
-    GetPage(String),
-}
 
 pub struct Db<'a> {
     repo: Repo<'a>,
@@ -25,15 +20,25 @@ impl<'a> Db<'a> {
         Ok(Self { repo, posts, pages })
     }
 
-    pub async fn listen(&self, mut rx: mpsc::Receiver<DbOp>) {
-        while let Some(op) = rx.recv().await {
+    pub async fn listen(&self, mut op_reciever: mpsc::Receiver<Op>) {
+        while let Some(op) = op_reciever.recv().await {
             match op {
-                DbOp::GetPost(title) => {
+                Op::GetPost {
+                    title,
+                    channel_sender,
+                } => {
                     if let Some(post) = self.posts.get(&title) {
-                        println!("{}", post.content);
+                        channel_sender.send(post.content.clone());
                     }
                 }
-                DbOp::GetPage(title) => {}
+                Op::GetPage {
+                    title,
+                    channel_sender,
+                } => {
+                    if let Some(page) = self.pages.get(&title) {
+                        channel_sender.send(page.content.clone());
+                    }
+                }
             }
         }
     }

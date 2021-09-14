@@ -4,6 +4,7 @@ use tokio::sync::mpsc;
 
 mod config;
 mod db;
+mod op;
 mod repo;
 mod router;
 
@@ -19,12 +20,14 @@ async fn main() {
         }
     };
 
-    let (tx, mut rx) = mpsc::channel(32);
+    let (op_sender, mut op_reciever) = mpsc::channel(8);
 
-    router::Router::run(&config.settings, tx).await.unwrap();
+    router::Router::run(&config.settings, op_sender)
+        .await
+        .unwrap();
 
     match db::Db::init(&config) {
-        Ok(db) => db.listen(rx).await,
+        Ok(db) => db.listen(op_reciever).await,
         Err(err) => {
             println!("{}", err);
             return;
