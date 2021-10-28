@@ -1,4 +1,3 @@
-use anyhow::{bail, Context, Result};
 use getopts::Options;
 use serde::Deserialize;
 use std::{fs, path::Path};
@@ -23,7 +22,7 @@ pub struct Settings {
 }
 
 impl Config {
-    pub fn parse(args: Vec<String>) -> Result<Self> {
+    pub fn parse(args: Vec<String>) -> Result<Self, String> {
         let mut opts = Options::new();
 
         opts.optopt("c", "config-file", "config file path", "CONFIG");
@@ -33,28 +32,26 @@ impl Config {
 
         let matches = opts
             .parse(&args[1..])
-            .context(format!("Failed to parse arguments\n{}", usage.clone()))?;
+            .map_err(|err| format!("Failed to parse arguments: {}\n{}", err, usage))?;
 
         if !matches.free.is_empty() {
-            bail!("Unexpected fragment\n{}", usage.clone());
+            return Err(format!("Unexpected fragment\n{}", usage));
         }
 
         if matches.opt_present("h") {
-            bail!("{}", usage.clone());
+            return Err(usage);
         }
 
         let config_file = matches
             .opt_str("c")
-            .context(format!("No config file specificed\n{}", usage.clone()))?;
+            .ok_or_else(|| format!("No config file specificed\n{}", usage))?;
 
         Self::from_file(config_file)
     }
 
-    fn from_file(config_file: String) -> Result<Config> {
-        let config = fs::read_to_string(Path::new(&config_file))?;
-
-        let config = toml::from_str(&config)?;
-
+    fn from_file(config_file: String) -> Result<Config, String> {
+        let config = fs::read_to_string(Path::new(&config_file)).map_err(|err| err.to_string())?;
+        let config = toml::from_str(&config).map_err(|err| err.to_string())?;
         Ok(config)
     }
 }

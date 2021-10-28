@@ -1,11 +1,8 @@
-use crate::config::Config;
+use crate::{config::Config, database::Database};
 use std::env;
-use tokio::sync::mpsc;
 
 mod config;
-mod db;
-mod op;
-mod repo;
+mod database;
 mod router;
 
 #[tokio::main]
@@ -20,17 +17,9 @@ async fn main() {
         }
     };
 
-    let (op_sender, mut op_reciever) = mpsc::channel(8);
+    let (database, repo_daemon) = Database::init(&config).await;
 
-    router::Router::run(&config.settings, op_sender)
-        .await
-        .unwrap();
+    router::start(&config, database).await;
 
-    match db::Db::init(&config) {
-        Ok(mut db) => db.listen(op_reciever).await,
-        Err(err) => {
-            println!("{}", err);
-            return;
-        }
-    }
+    repo_daemon.listen().await;
 }

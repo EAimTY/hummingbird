@@ -1,14 +1,13 @@
 [package]
 name = "no_name_yet"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-anyhow = "1.0"
 axum = { version = "0.2", default-features = false }
 getopts = "0.2"
 git2 = { version = "0.13", features = ["https", "vendored-libgit2"], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 tempfile = "3.2"
+tokio = { version = "1.12", features = ["macros", "rt-multi-thread", "sync"] }
 toml = "0.5"
-tokio = { version = "1.11", features = ["rt-multi-thread", "macros"] }
