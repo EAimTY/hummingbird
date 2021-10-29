@@ -1,16 +1,18 @@
-use self::{
-    post::Post,
+pub use self::post::Post;
+use self::theme::Theme;
+use crate::{
+    config::Config,
     repo::{Repo, RepoDaemon},
 };
-use crate::config::Config;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, oneshot, RwLock};
 
 mod post;
-mod repo;
+mod theme;
 
 pub struct Database {
-    posts: HashMap<String, Post>,
+    pub theme: Theme,
+    pub posts: HashMap<String, Post>,
     repo_update_sender: mpsc::Sender<oneshot::Sender<DatabaseUpdate>>,
 }
 
@@ -20,6 +22,7 @@ impl Database {
 
         (
             Arc::new(RwLock::new(Self {
+                theme: Theme::new(),
                 posts: HashMap::new(),
                 repo_update_sender,
             })),
@@ -37,5 +40,5 @@ impl Database {
 
 #[derive(Debug)]
 pub struct DatabaseUpdate {
-    posts: HashMap<String, Post>,
+    pub posts: HashMap<String, Post>,
 }

@@ -1,5 +1,7 @@
-use super::{post::Post, DatabaseUpdate};
-use crate::config::Config;
+use crate::{
+    config::Config,
+    database::{DatabaseUpdate, Post},
+};
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
 use std::{collections::HashMap, str};
 use tempfile::TempDir;
