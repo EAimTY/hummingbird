@@ -2,7 +2,7 @@ pub use self::post::Post;
 use self::theme::Theme;
 use crate::{
     config::Config,
-    repo::{Repo, RepoDaemon},
+    git::{Repo, RepoDaemon},
 };
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, oneshot, RwLock};

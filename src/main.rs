@@ -4,7 +4,7 @@ use std::env;
 mod config;
 mod data;
 mod database;
-mod repo;
+mod git;
 mod router;
 
 #[tokio::main]
