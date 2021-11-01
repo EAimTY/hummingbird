@@ -7,7 +7,7 @@ impl Theme {
         Theme {}
     }
 
-    pub fn render(&self, data: Data) -> String {
+    pub fn render(&self, _data: Data) -> String {
         String::from("rendered")
     }
 }

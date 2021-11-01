@@ -1,8 +1,12 @@
 use crate::{config::Config, database::DatabaseUpdate};
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
+use std::{collections::HashMap, path::PathBuf};
 use tempfile::TempDir;
 use tokio::sync::{mpsc, oneshot};
 
+pub use self::daemon::RepoDaemon;
+
+mod daemon;
 mod extract;
 mod fetch;
 mod parse;
@@ -10,6 +14,7 @@ mod theme;
 
 pub struct Repo<'a> {
     repo: Repository,
+    info_map: HashMap<PathBuf, FileInfo>,
     tempdir: TempDir,
     fetch_options: FetchOptions<'a>,
 }
@@ -49,9 +54,12 @@ impl<'a> Repo<'a> {
             .clone(config.git.repository.as_ref().unwrap(), tempdir.path())
             .unwrap();
 
+        let info_map = self::parse::parse_info(&repo);
+
         RepoDaemon {
             repo: Self {
                 repo,
+                info_map,
                 tempdir,
                 fetch_options: {
                     let mut fetch_options = FetchOptions::new();
@@ -81,20 +89,8 @@ impl<'a> Repo<'a> {
     }
 }
 
-pub struct RepoDaemon<'a> {
-    repo: Repo<'a>,
-    repo_update_listener: mpsc::Receiver<oneshot::Sender<DatabaseUpdate>>,
-}
-
-impl<'a> RepoDaemon<'a> {
-    pub async fn listen(mut self) {
-        while let Some(responder) = self.repo_update_listener.recv().await {
-            self.repo.fetch();
-
-            let posts = self.repo.get_posts();
-
-            let update = DatabaseUpdate { posts };
-            responder.send(update).unwrap();
-        }
-    }
+#[derive(Clone)]
+pub struct FileInfo {
+    create_time: Option<i64>,
+    modify_time: i64,
 }
