@@ -1,20 +1,17 @@
 use crate::{config::Config, database::DatabaseUpdate};
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
-use std::{collections::HashMap, path::PathBuf};
 use tempfile::TempDir;
 use tokio::sync::{mpsc, oneshot};
 
 pub use self::daemon::RepoDaemon;
 
 mod daemon;
-mod extract;
 mod fetch;
 mod parse;
 mod theme;
 
 pub struct Repo<'a> {
     repo: Repository,
-    info_map: HashMap<PathBuf, FileInfo>,
     tempdir: TempDir,
     fetch_options: FetchOptions<'a>,
 }
@@ -54,12 +51,9 @@ impl<'a> Repo<'a> {
             .clone(config.git.repository.as_ref().unwrap(), tempdir.path())
             .unwrap();
 
-        let info_map = self::parse::parse_info(&repo);
-
         RepoDaemon {
             repo: Self {
                 repo,
-                info_map,
                 tempdir,
                 fetch_options: {
                     let mut fetch_options = FetchOptions::new();

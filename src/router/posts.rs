@@ -1,6 +1,5 @@
-use crate::{
-    data::{Data, PostData},
-    database::Database,
+use crate::database::{
+    Database,
 };
 use axum::extract::{Extension, Path};
 use std::sync::Arc;
@@ -11,16 +10,7 @@ pub async fn handle_get(
     Extension(database): Extension<Arc<RwLock<Database>>>,
 ) -> String {
     if path.ends_with(".html") {
-        let post = database
-            .read()
-            .await
-            .get_post(path[..path.len() - 5].to_string());
-
-        database
-            .read()
-            .await
-            .theme
-            .render(Data::Post(PostData { data: post }))
+        database.read().await.get_post(&path[..path.len() - 5])
     } else {
         "not found".into()
     }

@@ -2,7 +2,6 @@ use crate::{config::Config, database::Database};
 use std::env;
 
 mod config;
-mod data;
 mod database;
 mod git;
 mod router;

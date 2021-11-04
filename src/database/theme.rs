@@ -1,4 +1,4 @@
-use crate::data::Data;
+use super::query::Query;
 
 pub struct Theme {}
 
@@ -7,7 +7,7 @@ impl Theme {
         Theme {}
     }
 
-    pub fn render(&self, _data: Data) -> String {
+    pub fn render(&self, _data: Query) -> String {
         String::from("rendered")
     }
 }
