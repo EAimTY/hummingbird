@@ -11,7 +11,7 @@ impl<'a> RepoDaemon<'a> {
     pub async fn listen(mut self) {
         while let Some(responder) = self.repo_update_listener.recv().await {
             self.repo.fetch();
-            let update = self.repo.get_database_update();
+            let update = self.repo.get_database_update().await;
             responder.send(update).unwrap();
         }
     }

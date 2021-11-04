@@ -1,6 +1,4 @@
-use crate::database::{
-    Database,
-};
+use crate::database::Database;
 use axum::extract::{Extension, Path};
 use std::sync::Arc;
 use tokio::sync::RwLock;

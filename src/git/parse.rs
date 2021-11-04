@@ -1,8 +1,17 @@
-use crate::database::{DatabaseUpdate, Posts};
+use super::Repo;
+use crate::database::{DatabaseUpdate, Post, Posts};
+use git2::DiffFindOptions;
+use std::{
+    collections::{BinaryHeap, HashMap},
+    ffi::OsStr,
+    path::PathBuf,
+};
 
-use super::{FileInfo, Repo};
-use git2::{DiffFindOptions};
-use std::{collections::HashMap, ffi::OsStr, path::PathBuf};
+#[derive(Clone)]
+pub struct FileInfo {
+    create_time: Option<i64>,
+    modify_time: i64,
+}
 
 impl FileInfo {
     fn new(modify_time: i64) -> Self {
@@ -25,11 +34,31 @@ enum FileStatus {
 }
 
 impl Repo<'_> {
-    pub fn get_database_update(&self) -> DatabaseUpdate {
-        let _file_info = self.get_file_info();
-        DatabaseUpdate {
-            posts: Posts::new(),
+    pub async fn get_database_update(&self) -> DatabaseUpdate {
+        let mut posts = BinaryHeap::new();
+
+        for (path, info) in self.get_file_info().into_iter() {
+            let post = Post {
+                title: path.file_name().unwrap().to_str().unwrap().to_owned(),
+                content: tokio::fs::read_to_string(path).await.unwrap(),
+                create_time: info.create_time.unwrap(),
+                modify_time: info.modify_time,
+            };
+
+            posts.push(post);
         }
+
+        let posts = posts.into_sorted_vec();
+
+        let map = posts
+            .iter()
+            .enumerate()
+            .map(|(idx, post)| (post.title.clone(), idx))
+            .collect::<HashMap<_, _>>();
+
+        let posts = Posts { data: posts, map };
+
+        DatabaseUpdate { posts }
     }
 
     pub fn get_file_info(&self) -> HashMap<PathBuf, FileInfo> {

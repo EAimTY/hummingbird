@@ -82,9 +82,3 @@ impl<'a> Repo<'a> {
         }
     }
 }
-
-#[derive(Clone)]
-pub struct FileInfo {
-    create_time: Option<i64>,
-    modify_time: i64,
-}

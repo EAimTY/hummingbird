@@ -2,12 +2,20 @@ use super::{
     query::{PostData, Query},
     Database,
 };
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
+
+impl Database {
+    pub fn get_post(&self, path: &str) -> String {
+        let id = self.posts.map.get(path).unwrap();
+        let post_data = &self.posts.data[*id];
+        self.theme.render(Query::Post(PostData { data: post_data }))
+    }
+}
 
 #[derive(Debug)]
 pub struct Posts {
-    data: Vec<Post>,
-    map: HashMap<String, usize>,
+    pub data: Vec<Post>,
+    pub map: HashMap<String, usize>,
 }
 
 impl Posts {
@@ -19,7 +27,7 @@ impl Posts {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd)]
 pub struct Post {
     pub title: String,
     pub content: String,
@@ -27,10 +35,11 @@ pub struct Post {
     pub modify_time: i64,
 }
 
-impl Database {
-    pub fn get_post(&self, path: &str) -> String {
-        let id = self.posts.map.get(path).unwrap();
-        let post_data = &self.posts.data[*id];
-        self.theme.render(Query::Post(PostData { data: post_data }))
+impl Ord for Post {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.create_time.cmp(&other.create_time) {
+            Ordering::Equal => self.title.cmp(&other.title),
+            other => other,
+        }
     }
 }
