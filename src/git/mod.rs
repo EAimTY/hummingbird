@@ -10,16 +10,16 @@ mod fetch;
 mod parse;
 mod theme;
 
-pub struct Repo<'a> {
+pub struct Repo<'repo> {
     repo: Repository,
     tempdir: TempDir,
-    fetch_options: FetchOptions<'a>,
+    fetch_options: FetchOptions<'repo>,
 }
 
-impl<'a> Repo<'a> {
+impl<'repo> Repo<'repo> {
     pub fn init(
         repo_update_listener: mpsc::Receiver<oneshot::Sender<DatabaseUpdate>>,
-    ) -> RepoDaemon<'a> {
+    ) -> RepoDaemon<'repo> {
         let fetch_options = {
             let mut fetch_options = FetchOptions::new();
 
