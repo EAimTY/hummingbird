@@ -50,13 +50,16 @@ impl Repo<'_> {
 
         let posts = posts.into_sorted_vec();
 
-        let map = posts
+        let url_map = posts
             .iter()
             .enumerate()
             .map(|(idx, post)| (post.title.clone(), idx))
-            .collect::<HashMap<_, _>>();
+            .collect::<HashMap<String, usize>>();
 
-        let posts = Posts { data: posts, map };
+        let posts = Posts {
+            data: posts,
+            url_map,
+        };
 
         DatabaseUpdate { posts }
     }

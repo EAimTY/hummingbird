@@ -18,21 +18,21 @@ pub struct Repo<'a> {
 
 impl<'a> Repo<'a> {
     pub fn init(
-        config: &'a Config,
         repo_update_listener: mpsc::Receiver<oneshot::Sender<DatabaseUpdate>>,
-    ) -> RepoDaemon {
+    ) -> RepoDaemon<'a> {
         let fetch_options = {
             let mut fetch_options = FetchOptions::new();
 
-            if let Some(proxy_url) = config.git.proxy.as_ref() {
+            if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
                 let mut proxy_option = ProxyOptions::new();
                 proxy_option.url(proxy_url);
                 fetch_options.proxy_options(proxy_option);
             }
 
-            if let (Some(username), Some(password)) =
-                (config.git.user.as_ref(), config.git.password.as_ref())
-            {
+            if let (Some(username), Some(password)) = (
+                Config::read().git.user.as_ref(),
+                Config::read().git.password.as_ref(),
+            ) {
                 let mut remote_callbacks = RemoteCallbacks::new();
                 remote_callbacks
                     .credentials(move |_, _, _| Cred::userpass_plaintext(username, password));
@@ -48,7 +48,10 @@ impl<'a> Repo<'a> {
         let tempdir = TempDir::new().unwrap();
 
         let repo = builder
-            .clone(config.git.repository.as_ref().unwrap(), tempdir.path())
+            .clone(
+                Config::read().git.repository.as_ref().unwrap(),
+                tempdir.path(),
+            )
             .unwrap();
 
         RepoDaemon {
@@ -58,15 +61,16 @@ impl<'a> Repo<'a> {
                 fetch_options: {
                     let mut fetch_options = FetchOptions::new();
 
-                    if let Some(proxy_url) = config.git.proxy.as_ref() {
+                    if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
                         let mut proxy_option = ProxyOptions::new();
                         proxy_option.url(proxy_url);
                         fetch_options.proxy_options(proxy_option);
                     }
 
-                    if let (Some(username), Some(password)) =
-                        (config.git.user.as_ref(), config.git.password.as_ref())
-                    {
+                    if let (Some(username), Some(password)) = (
+                        Config::read().git.user.as_ref(),
+                        Config::read().git.password.as_ref(),
+                    ) {
                         let mut remote_callbacks = RemoteCallbacks::new();
                         remote_callbacks.credentials(move |_, _, _| {
                             Cred::userpass_plaintext(username, password)

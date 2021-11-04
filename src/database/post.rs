@@ -6,7 +6,7 @@ use std::{cmp::Ordering, collections::HashMap};
 
 impl Database {
     pub fn get_post(&self, path: &str) -> String {
-        let id = self.posts.map.get(path).unwrap();
+        let id = self.posts.url_map.get(path).unwrap();
         let post_data = &self.posts.data[*id];
         self.theme.render(Query::Post(PostData { data: post_data }))
     }
@@ -15,14 +15,14 @@ impl Database {
 #[derive(Debug)]
 pub struct Posts {
     pub data: Vec<Post>,
-    pub map: HashMap<String, usize>,
+    pub url_map: HashMap<String, usize>,
 }
 
 impl Posts {
     pub fn new() -> Self {
         Posts {
             data: Vec::new(),
-            map: HashMap::new(),
+            url_map: HashMap::new(),
         }
     }
 }

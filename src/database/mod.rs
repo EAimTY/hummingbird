@@ -18,7 +18,7 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn init(config: &Config) -> (Arc<RwLock<Self>>, RepoDaemon<'_>) {
+    pub async fn init() -> (Arc<RwLock<Self>>, RepoDaemon<'static>) {
         let (repo_update_sender, repo_update_listener) = mpsc::channel(1);
 
         (
@@ -27,7 +27,7 @@ impl Database {
                 posts: Posts::new(),
                 repo_update_sender,
             })),
-            Repo::init(config, repo_update_listener),
+            Repo::init(repo_update_listener),
         )
     }
 

@@ -1,14 +1,16 @@
+use crate::CONFIG;
 use getopts::Options;
 use serde::Deserialize;
 use std::{fs, path::Path};
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub git: Git,
     pub settings: Settings,
+    pub url_pattern: UrlPattern,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Git {
     pub repository: Option<String>,
     pub user: Option<String>,
@@ -16,9 +18,14 @@ pub struct Git {
     pub proxy: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     pub update_token: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UrlPattern {
+    pub post_pattern: Option<String>,
 }
 
 impl Config {
@@ -53,5 +60,9 @@ impl Config {
         let config = fs::read_to_string(Path::new(&config_file)).map_err(|err| err.to_string())?;
         let config = toml::from_str(&config).map_err(|err| err.to_string())?;
         Ok(config)
+    }
+
+    pub fn read() -> &'static Self {
+        CONFIG.get().expect("config is not initialized")
     }
 }

@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 mod posts;
 mod update;
 
-pub async fn start(_config: &Config, database: Arc<RwLock<Database>>) {
+pub async fn start(database: Arc<RwLock<Database>>) {
     tokio::spawn(async move {
         database.write().await.update().await;
 

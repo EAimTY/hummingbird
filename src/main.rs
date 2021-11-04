@@ -1,10 +1,13 @@
 use crate::{config::Config, database::Database};
+use once_cell::sync::OnceCell;
 use std::env;
 
 mod config;
 mod database;
 mod git;
 mod router;
+
+static CONFIG: OnceCell<Config> = OnceCell::new();
 
 #[tokio::main]
 async fn main() {
@@ -18,9 +21,11 @@ async fn main() {
         }
     };
 
-    let (database, repo_daemon) = Database::init(&config).await;
+    CONFIG.set(config).unwrap();
 
-    router::start(&config, database).await;
+    let (database, repo_daemon) = Database::init().await;
+
+    router::start(database).await;
 
     repo_daemon.listen().await;
 }
