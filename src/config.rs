@@ -1,7 +1,9 @@
-use crate::CONFIG;
 use getopts::Options;
+use once_cell::sync::OnceCell;
 use serde::Deserialize;
 use std::{fs, path::Path};
+
+static CONFIG: OnceCell<Config> = OnceCell::new();
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -29,7 +31,7 @@ pub struct UrlPattern {
 }
 
 impl Config {
-    pub fn parse(args: Vec<String>) -> Result<Self, String> {
+    pub fn parse(args: Vec<String>) -> Result<(), String> {
         let mut opts = Options::new();
 
         opts.optopt("c", "config-file", "config file path", "CONFIG");
@@ -53,7 +55,10 @@ impl Config {
             .opt_str("c")
             .ok_or_else(|| format!("No config file specificed\n{}", usage))?;
 
-        Self::from_file(config_file)
+        let config = Self::from_file(config_file)?;
+        CONFIG.set(config).unwrap();
+
+        Ok(())
     }
 
     fn from_file(config_file: String) -> Result<Config, String> {

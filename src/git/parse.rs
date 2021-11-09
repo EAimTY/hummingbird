@@ -74,7 +74,6 @@ impl Repo<'_> {
         for step in revwalk {
             let oid = step.unwrap();
             let commit = self.repo.find_commit(oid).unwrap();
-            println!("commit: {:?}", commit.id());
             let a = if commit.parents().len() == 1 {
                 let parent = commit.parent(0).unwrap();
                 Some(parent.tree().unwrap())

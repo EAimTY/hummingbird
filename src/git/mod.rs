@@ -20,30 +20,8 @@ impl<'repo> Repo<'repo> {
     pub fn init(
         repo_update_listener: mpsc::Receiver<oneshot::Sender<DatabaseUpdate>>,
     ) -> RepoDaemon<'repo> {
-        let fetch_options = {
-            let mut fetch_options = FetchOptions::new();
-
-            if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
-                let mut proxy_option = ProxyOptions::new();
-                proxy_option.url(proxy_url);
-                fetch_options.proxy_options(proxy_option);
-            }
-
-            if let (Some(username), Some(password)) = (
-                Config::read().git.user.as_ref(),
-                Config::read().git.password.as_ref(),
-            ) {
-                let mut remote_callbacks = RemoteCallbacks::new();
-                remote_callbacks
-                    .credentials(move |_, _, _| Cred::userpass_plaintext(username, password));
-                fetch_options.remote_callbacks(remote_callbacks);
-            }
-
-            fetch_options
-        };
-
         let mut builder = RepoBuilder::new();
-        builder.fetch_options(fetch_options);
+        builder.fetch_options(Self::get_fetch_options());
 
         let tempdir = TempDir::new().unwrap();
 
@@ -58,31 +36,31 @@ impl<'repo> Repo<'repo> {
             repo: Self {
                 repo,
                 tempdir,
-                fetch_options: {
-                    let mut fetch_options = FetchOptions::new();
-
-                    if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
-                        let mut proxy_option = ProxyOptions::new();
-                        proxy_option.url(proxy_url);
-                        fetch_options.proxy_options(proxy_option);
-                    }
-
-                    if let (Some(username), Some(password)) = (
-                        Config::read().git.user.as_ref(),
-                        Config::read().git.password.as_ref(),
-                    ) {
-                        let mut remote_callbacks = RemoteCallbacks::new();
-                        remote_callbacks.credentials(move |_, _, _| {
-                            Cred::userpass_plaintext(username, password)
-                        });
-
-                        fetch_options.remote_callbacks(remote_callbacks);
-                    }
-
-                    fetch_options
-                },
+                fetch_options: Self::get_fetch_options(),
             },
             repo_update_listener,
         }
+    }
+
+    fn get_fetch_options() -> FetchOptions<'repo> {
+        let mut fetch_options = FetchOptions::new();
+
+        if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
+            let mut proxy_option = ProxyOptions::new();
+            proxy_option.url(proxy_url);
+            fetch_options.proxy_options(proxy_option);
+        }
+
+        if let (Some(username), Some(password)) = (
+            Config::read().git.user.as_ref(),
+            Config::read().git.password.as_ref(),
+        ) {
+            let mut remote_callbacks = RemoteCallbacks::new();
+            remote_callbacks
+                .credentials(move |_, _, _| Cred::userpass_plaintext(username, password));
+            fetch_options.remote_callbacks(remote_callbacks);
+        }
+
+        fetch_options
     }
 }
