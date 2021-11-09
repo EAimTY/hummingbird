@@ -1,4 +1,4 @@
-use super::query::Query;
+use super::Query;
 
 pub struct Theme {}
 

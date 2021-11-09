@@ -53,7 +53,7 @@ impl Repo<'_> {
         let url_map = posts
             .iter()
             .enumerate()
-            .map(|(idx, post)| (post.title.clone(), idx))
+            .map(|(idx, post)| (post.get_url(), idx))
             .collect::<HashMap<String, usize>>();
 
         let posts = Posts {
@@ -108,7 +108,7 @@ impl Repo<'_> {
                             FileStatus::Created => {
                                 info_map
                                     .entry(path)
-                                    .or_insert(FileInfo::new(commit.time().seconds()));
+                                    .or_insert_with(|| FileInfo::new(commit.time().seconds()));
                             }
                             _ => {}
                         }
@@ -129,7 +129,7 @@ impl Repo<'_> {
                             FileStatus::Created => {
                                 let info = info_map
                                     .entry(path)
-                                    .or_insert(FileInfo::new(commit.time().seconds()));
+                                    .or_insert_with(|| FileInfo::new(commit.time().seconds()));
                                 info.set_create_time(commit.time().seconds());
                             }
                             FileStatus::Renamed(new_path) => {
@@ -161,7 +161,7 @@ impl Repo<'_> {
                             FileStatus::Created => {
                                 info_map
                                     .entry(new_path.clone())
-                                    .or_insert(FileInfo::new(commit.time().seconds()));
+                                    .or_insert_with(|| FileInfo::new(commit.time().seconds()));
                                 status_map.insert(old_path, FileStatus::Renamed(new_path.clone()));
                             }
                             FileStatus::Renamed(new_new_path) => {

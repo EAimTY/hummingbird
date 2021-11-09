@@ -9,7 +9,7 @@ static CONFIG: OnceCell<Config> = OnceCell::new();
 pub struct Config {
     pub git: Git,
     pub settings: Settings,
-    pub url_pattern: UrlPattern,
+    pub url_patterns: UrlPatterns,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,8 +26,8 @@ pub struct Settings {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UrlPattern {
-    pub post_pattern: Option<String>,
+pub struct UrlPatterns {
+    pub post_url: Option<String>,
 }
 
 impl Config {

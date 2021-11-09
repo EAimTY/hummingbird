@@ -1,5 +1,8 @@
-pub use self::post::{Post, Posts};
 use self::theme::Theme;
+pub use self::{
+    archive::Archive,
+    post::{Post, Posts},
+};
 use crate::{
     config::Config,
     git::{Repo, RepoDaemon},
@@ -7,8 +10,8 @@ use crate::{
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot, RwLock};
 
+mod archive;
 mod post;
-pub mod query;
 mod theme;
 
 pub struct Database {
@@ -42,4 +45,10 @@ impl Database {
 #[derive(Debug)]
 pub struct DatabaseUpdate {
     pub posts: Posts,
+}
+
+pub enum Query<'query> {
+    Post(&'query Post),
+    Archive(Archive<'query>),
+    // ...
 }
