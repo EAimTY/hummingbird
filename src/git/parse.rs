@@ -38,9 +38,10 @@ impl Repo<'_> {
         let mut posts = BinaryHeap::new();
 
         for (path, info) in self.get_file_info().into_iter() {
+            let abs_path = self.tempdir.path().join(&path);
             let post = Post {
-                title: path.file_name().unwrap().to_str().unwrap().to_owned(),
-                content: tokio::fs::read_to_string(path).await.unwrap(),
+                title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
+                content: tokio::fs::read_to_string(abs_path).await.unwrap(),
                 create_time: info.create_time.unwrap(),
                 modify_time: info.modify_time,
             };

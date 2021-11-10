@@ -1,7 +1,6 @@
 use crate::config::Config;
 
 use super::{Database, Query};
-use regex::{Captures, Regex};
 use std::{cmp::Ordering, collections::HashMap};
 
 impl Database {
@@ -37,14 +36,8 @@ pub struct Post {
 
 impl Post {
     pub fn get_url(&self) -> String {
-        let re = Regex::new("({slug})").unwrap();
         let pattern = Config::read().url_patterns.post_url.as_ref().unwrap();
-
-        re.replace_all(pattern, |cap: &Captures| match &cap[0] {
-            "{slug}" => &self.title,
-            _ => unreachable!(),
-        })
-        .to_string()
+        pattern.replace("{slug}", &self.title)
     }
 }
 

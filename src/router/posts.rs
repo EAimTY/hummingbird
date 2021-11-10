@@ -7,9 +7,5 @@ pub async fn handle_get(
     Path(path): Path<String>,
     Extension(database): Extension<Arc<RwLock<Database>>>,
 ) -> String {
-    if path.ends_with(".html") {
-        database.read().await.get_post(&path[..path.len() - 5])
-    } else {
-        "not found".into()
-    }
+    database.read().await.get_post(&path)
 }

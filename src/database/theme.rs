@@ -7,7 +7,10 @@ impl Theme {
         Theme {}
     }
 
-    pub fn render(&self, _data: Query) -> String {
-        String::from("rendered")
+    pub fn render(&self, data: Query) -> String {
+        match data {
+            Query::Post(post) => post.content.clone(),
+            Query::Archive(_archive) => todo!(),
+        }
     }
 }

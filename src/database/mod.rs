@@ -3,10 +3,7 @@ pub use self::{
     archive::Archive,
     post::{Post, Posts},
 };
-use crate::{
-    config::Config,
-    git::{Repo, RepoDaemon},
-};
+use crate::git::{Repo, RepoDaemon};
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot, RwLock};
 
