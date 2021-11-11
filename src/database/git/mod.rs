@@ -1,5 +1,6 @@
 pub use self::daemon::RepoDaemon;
 use crate::{config::Config, database::DatabaseUpdate};
+use anyhow::Result;
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
 use tempfile::TempDir;
 use tokio::sync::{mpsc, oneshot};
@@ -18,27 +19,22 @@ pub struct Repo<'repo> {
 impl<'repo> Repo<'repo> {
     pub fn init(
         repo_update_listener: mpsc::Receiver<oneshot::Sender<DatabaseUpdate>>,
-    ) -> RepoDaemon<'repo> {
+    ) -> Result<RepoDaemon<'repo>> {
         let mut builder = RepoBuilder::new();
         builder.fetch_options(get_fetch_options());
 
-        let tempdir = TempDir::new().unwrap();
+        let tempdir = TempDir::new()?;
 
-        let repo = builder
-            .clone(
-                &Config::read().git.repository,
-                tempdir.path(),
-            )
-            .unwrap();
+        let repo = builder.clone(&Config::read().git.repository, tempdir.path())?;
 
-        RepoDaemon {
+        Ok(RepoDaemon {
             repo: Self {
                 repo,
                 tempdir,
                 fetch_options: get_fetch_options(),
             },
             repo_update_listener,
-        }
+        })
     }
 }
 

@@ -60,7 +60,7 @@ impl<'cfg> ConfigBuilder<'cfg> {
         }
     }
 
-    pub fn usage(&self) -> String {
+    pub fn get_usage(&self) -> String {
         self.opts
             .usage(&format!("Usage: {} [options]", self.program.unwrap()))
     }
