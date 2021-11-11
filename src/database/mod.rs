@@ -1,13 +1,14 @@
 use self::theme::Theme;
 pub use self::{
     archive::Archive,
+    git::{Repo, RepoDaemon},
     post::{Post, Posts},
 };
-use crate::git::{Repo, RepoDaemon};
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot, RwLock};
 
 mod archive;
+mod git;
 mod post;
 mod theme;
 

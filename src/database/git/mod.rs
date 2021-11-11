@@ -1,9 +1,8 @@
+pub use self::daemon::RepoDaemon;
 use crate::{config::Config, database::DatabaseUpdate};
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
 use tempfile::TempDir;
 use tokio::sync::{mpsc, oneshot};
-
-pub use self::daemon::RepoDaemon;
 
 mod daemon;
 mod fetch;

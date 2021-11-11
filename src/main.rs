@@ -3,7 +3,6 @@ use std::env;
 
 mod config;
 mod database;
-mod git;
 mod router;
 
 #[tokio::main]
