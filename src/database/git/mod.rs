@@ -26,7 +26,7 @@ impl<'repo> Repo<'repo> {
 
         let repo = builder
             .clone(
-                Config::read().git.repository.as_ref().unwrap(),
+                &Config::read().git.repository,
                 tempdir.path(),
             )
             .unwrap();

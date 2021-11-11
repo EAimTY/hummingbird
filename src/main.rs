@@ -1,4 +1,4 @@
-use crate::{config::Config, database::Database};
+use crate::{config::ConfigBuilder, database::Database};
 use std::env;
 
 mod config;
@@ -9,10 +9,12 @@ mod router;
 async fn main() {
     let args: Vec<String> = env::args().collect();
 
-    match Config::parse(args) {
+    let mut config_builder = ConfigBuilder::new();
+
+    match config_builder.parse(&args) {
         Ok(config) => config,
         Err(err) => {
-            println!("{}", err);
+            eprintln!("{}\n\n{}", err, config_builder.usage());
             return;
         }
     }

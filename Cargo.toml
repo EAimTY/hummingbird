@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0"
 axum = { version = "0.2", default-features = false }
 getopts = "0.2"
 git2 = { version = "0.13", features = ["https", "vendored-libgit2"], default-features = false }

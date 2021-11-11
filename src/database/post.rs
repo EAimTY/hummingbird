@@ -36,7 +36,7 @@ pub struct Post {
 
 impl Post {
     pub fn get_url(&self) -> String {
-        let pattern = Config::read().url_patterns.post_url.as_ref().unwrap();
+        let pattern = &Config::read().url_patterns.post_url;
         pattern.replace("{slug}", &self.title)
     }
 }
