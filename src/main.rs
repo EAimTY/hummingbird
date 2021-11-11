@@ -4,6 +4,7 @@ use std::env;
 
 mod config;
 mod database;
+mod handler;
 mod router;
 
 #[tokio::main]

@@ -3,7 +3,7 @@ use axum::extract::{Extension, Path};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-pub async fn handle_get(
+pub async fn get(
     Path(path): Path<String>,
     Extension(database): Extension<Arc<RwLock<Database>>>,
 ) -> String {
