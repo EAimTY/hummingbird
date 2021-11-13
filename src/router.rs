@@ -1,22 +1,32 @@
 use crate::{config::Config, database::Database, handler};
-use anyhow::Result;
-use axum::{handler::get, AddExtensionLayer, Router};
-use std::sync::Arc;
-use tokio::{sync::RwLock, task::JoinHandle};
+use anyhow::Error;
+use axum::{routing::get, AddExtensionLayer, Router, Server};
+use std::{process, sync::Arc};
+use tokio::sync::RwLock;
 
-pub fn start(database: Arc<RwLock<Database>>) -> JoinHandle<Result<()>> {
+pub fn start(database: Arc<RwLock<Database>>) {
     tokio::spawn(async move {
-        database.write().await.update().await?;
+        match database.write().await.update().await {
+            Ok(()) => {}
+            Err(err) => exit(err),
+        }
 
         let app = Router::new()
-            .route("/:path", get(handler::post::get))
+            .route("/:post", get(handler::post::get))
             .route("/update", get(handler::update::get))
             .layer(AddExtensionLayer::new(database));
 
-        axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
+        match Server::bind(&"0.0.0.0:3000".parse().unwrap())
             .serve(app.into_make_service())
-            .await?;
+            .await
+        {
+            Ok(()) => {}
+            Err(err) => exit(Error::new(err)),
+        }
+    });
+}
 
-        Ok(())
-    })
+fn exit(err: Error) {
+    eprintln!("{}", err);
+    process::exit(1);
 }

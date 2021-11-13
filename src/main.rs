@@ -1,5 +1,4 @@
 use crate::{config::ConfigBuilder, database::Database};
-use anyhow::Error;
 use std::env;
 
 mod config;
@@ -29,15 +28,7 @@ async fn main() {
         }
     };
 
-    match router::start(database)
-        .await
-        .map_err(|err| Error::from(err))
-    {
-        Ok(Ok(())) => {}
-        Err(err) | Ok(Err(err)) => {
-            eprintln!("{}", err);
-        }
-    }
+    router::start(database);
 
     repo_daemon.listen().await;
 }

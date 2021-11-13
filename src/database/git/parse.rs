@@ -66,8 +66,8 @@ impl Repo<'_> {
     }
 
     pub fn get_file_info(&self) -> HashMap<PathBuf, FileInfo> {
-        let mut info_map = HashMap::<PathBuf, FileInfo>::new();
-        let mut status_map = HashMap::<PathBuf, FileStatus>::new();
+        let mut info_map = HashMap::new();
+        let mut status_map = HashMap::new();
 
         let mut revwalk = self.repo.revwalk().unwrap();
         revwalk.push_head().unwrap();
