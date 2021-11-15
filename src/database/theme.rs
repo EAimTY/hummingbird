@@ -1,4 +1,4 @@
-use super::Query;
+use super::Data;
 
 pub struct Theme {}
 
@@ -7,10 +7,10 @@ impl Theme {
         Theme {}
     }
 
-    pub fn render(&self, data: Query) -> String {
+    pub fn render(&self, data: Data) -> String {
         match data {
-            Query::Post(post) => post.content.clone(),
-            Query::Archive(_archive) => todo!(),
+            Data::Post(post) => post.content.clone(),
+            Data::Archive(_archive) => todo!(),
         }
     }
 }

@@ -13,33 +13,45 @@ mod git;
 mod post;
 mod theme;
 
+#[derive(Clone)]
 pub struct Database {
-    pub theme: Theme,
-    pub posts: Posts,
-    repo_update_sender: mpsc::Sender<oneshot::Sender<DatabaseUpdate>>,
+    data: Arc<RwLock<DatabaseData>>,
 }
 
 impl Database {
-    pub async fn init() -> Result<(Arc<RwLock<Self>>, RepoDaemon<'static>)> {
+    pub async fn init() -> Result<(Database, RepoDaemon<'static>)> {
         let (repo_update_sender, repo_update_listener) = mpsc::channel(1);
 
         Ok((
-            Arc::new(RwLock::new(Self {
-                theme: Theme::new(),
-                posts: Posts::new(),
-                repo_update_sender,
-            })),
+            Self {
+                data: Arc::new(RwLock::new(DatabaseData {
+                    theme: Theme::new(),
+                    posts: Posts::new(),
+                    repo_update_sender,
+                })),
+            },
             Repo::init(repo_update_listener)?,
         ))
     }
 
     pub async fn update(&mut self) -> Result<()> {
+        let mut database = self.data.write().await;
+
         let (update_sender, update_receiver) = oneshot::channel();
-        self.repo_update_sender.send(update_sender).await?;
+        database.repo_update_sender.send(update_sender).await?;
+
         let DatabaseUpdate { posts } = update_receiver.await?;
-        self.posts = posts;
+
+        database.posts = posts;
+
         Ok(())
     }
+}
+
+pub struct DatabaseData {
+    theme: Theme,
+    posts: Posts,
+    repo_update_sender: mpsc::Sender<oneshot::Sender<DatabaseUpdate>>,
 }
 
 #[derive(Debug)]
@@ -47,8 +59,8 @@ pub struct DatabaseUpdate {
     pub posts: Posts,
 }
 
-pub enum Query<'query> {
-    Post(&'query Post),
-    Archive(Archive<'query>),
+pub enum Data<'data> {
+    Post(&'data Post),
+    Archive(Archive<'data>),
     // ...
 }

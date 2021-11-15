@@ -1,13 +1,15 @@
 use crate::config::Config;
 
-use super::{Database, Query};
+use super::{Data, Database};
 use std::{cmp::Ordering, collections::HashMap};
 
 impl Database {
-    pub fn get_post(&self, path: &str) -> String {
-        let id = self.posts.url_map.get(path).unwrap();
-        let post_data = &self.posts.data[*id];
-        self.theme.render(Query::Post(post_data))
+    pub async fn get_post(&self, path: &str) -> String {
+        let database = self.data.read().await;
+
+        let id = database.posts.url_map.get(path).unwrap();
+        let post_data = &database.posts.data[*id];
+        database.theme.render(Data::Post(post_data))
     }
 }
 

@@ -1,0 +1,17 @@
+use crate::database::Database;
+use hyper::{Body, Request, Response};
+use std::convert::Infallible;
+
+pub mod post;
+pub mod update;
+
+pub async fn handle(
+    database: Database,
+    request: Request<Body>,
+) -> Result<Response<Body>, Infallible> {
+    Ok(if true {
+        post::get(database, request).await
+    } else {
+        Response::new(Body::from("not found"))
+    })
+}

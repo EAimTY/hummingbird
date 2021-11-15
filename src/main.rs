@@ -3,8 +3,8 @@ use std::env;
 
 mod config;
 mod database;
-mod handler;
 mod router;
+mod server;
 
 #[tokio::main]
 async fn main() {
@@ -28,7 +28,7 @@ async fn main() {
         }
     };
 
-    router::start(database);
+    server::start(database);
 
     repo_daemon.listen().await;
 }
