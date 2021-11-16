@@ -5,9 +5,7 @@ use hyper::{
 };
 use std::{convert::Infallible, net::SocketAddr};
 
-pub async fn start(mut database: Database) {
-    database.update().await.unwrap();
-
+pub async fn start(database: Database) {
     let service = make_service_fn(move |_| {
         let database = database.clone();
 

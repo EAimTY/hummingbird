@@ -3,8 +3,6 @@ use anyhow::Result;
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
 use tempfile::TempDir;
 
-mod parse;
-mod theme;
 mod update;
 
 pub struct Repo<'repo> {
@@ -29,6 +27,9 @@ impl<'repo> Repo<'repo> {
         })
     }
 }
+
+unsafe impl Send for Repo<'_> {}
+unsafe impl Sync for Repo<'_> {}
 
 fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
     let mut fetch_options = FetchOptions::new();

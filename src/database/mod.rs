@@ -1,44 +1,13 @@
-pub use self::{
-    archive::Archive,
-    git::Repo,
-    post::{Post, Posts},
-    theme::Theme,
-};
-use anyhow::Result;
+pub use self::{data::Data, git::Repo, post::Posts, theme::Theme, update::Update};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-mod archive;
+mod data;
 mod git;
+mod init;
 mod post;
 mod theme;
-
-#[derive(Clone)]
-pub struct Database {
-    data: Arc<RwLock<DatabaseData>>,
-}
-
-impl Database {
-    pub async fn init() -> Result<Self> {
-        Ok(Self {
-            data: Arc::new(RwLock::new(DatabaseData {
-                theme: Theme::new(),
-                posts: Posts::new(),
-                repo: Repo::init()?,
-            })),
-        })
-    }
-
-    pub async fn update(&mut self) -> Result<()> {
-        let mut database = self.data.write().await;
-
-        let DatabaseUpdate { posts } = database.repo.update().await;
-
-        database.posts = posts;
-
-        Ok(())
-    }
-}
+mod update;
 
 pub struct DatabaseData {
     theme: Theme,
@@ -46,16 +15,15 @@ pub struct DatabaseData {
     repo: Repo<'static>,
 }
 
-unsafe impl Send for DatabaseData {}
-unsafe impl Sync for DatabaseData {}
-
-#[derive(Debug)]
-pub struct DatabaseUpdate {
-    pub posts: Posts,
+#[derive(Clone)]
+pub struct Database {
+    data: Arc<RwLock<DatabaseData>>,
 }
 
-pub enum Data<'data> {
-    Post(&'data Post),
-    Archive(Archive<'data>),
-    // ...
+impl Database {
+    pub async fn get_post(&self, path: &str) -> String {
+        let database = self.data.read().await;
+        let post = database.posts.get_post(path);
+        database.theme.render(Data::Post(post))
+    }
 }
