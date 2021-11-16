@@ -1,12 +1,12 @@
-use self::theme::Theme;
 pub use self::{
     archive::Archive,
-    git::{Repo, RepoDaemon},
+    git::Repo,
     post::{Post, Posts},
+    theme::Theme,
 };
 use anyhow::Result;
 use std::sync::Arc;
-use tokio::sync::{mpsc, oneshot, RwLock};
+use tokio::sync::RwLock;
 
 mod archive;
 mod git;
@@ -19,28 +19,20 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn init() -> Result<(Database, RepoDaemon<'static>)> {
-        let (repo_update_sender, repo_update_listener) = mpsc::channel(1);
-
-        Ok((
-            Self {
-                data: Arc::new(RwLock::new(DatabaseData {
-                    theme: Theme::new(),
-                    posts: Posts::new(),
-                    repo_update_sender,
-                })),
-            },
-            Repo::init(repo_update_listener)?,
-        ))
+    pub async fn init() -> Result<Self> {
+        Ok(Self {
+            data: Arc::new(RwLock::new(DatabaseData {
+                theme: Theme::new(),
+                posts: Posts::new(),
+                repo: Repo::init()?,
+            })),
+        })
     }
 
     pub async fn update(&mut self) -> Result<()> {
         let mut database = self.data.write().await;
 
-        let (update_sender, update_receiver) = oneshot::channel();
-        database.repo_update_sender.send(update_sender).await?;
-
-        let DatabaseUpdate { posts } = update_receiver.await?;
+        let DatabaseUpdate { posts } = database.repo.update().await;
 
         database.posts = posts;
 
@@ -51,8 +43,11 @@ impl Database {
 pub struct DatabaseData {
     theme: Theme,
     posts: Posts,
-    repo_update_sender: mpsc::Sender<oneshot::Sender<DatabaseUpdate>>,
+    repo: Repo<'static>,
 }
+
+unsafe impl Send for DatabaseData {}
+unsafe impl Sync for DatabaseData {}
 
 #[derive(Debug)]
 pub struct DatabaseUpdate {

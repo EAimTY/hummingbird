@@ -1,7 +1,14 @@
+use crate::database::DatabaseUpdate;
+
 use super::Repo;
 
 impl Repo<'_> {
-    pub fn fetch(&mut self) {
+    pub async fn update(&mut self) -> DatabaseUpdate {
+        self.fetch();
+        self.get_database_update().await
+    }
+
+    fn fetch(&mut self) {
         let mut origin_remote = self.repo.find_remote("origin").unwrap();
         origin_remote
             .fetch(&["master"], Some(&mut self.fetch_options), None)
