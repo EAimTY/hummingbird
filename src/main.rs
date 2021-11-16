@@ -20,7 +20,7 @@ async fn main() {
         }
     }
 
-    let (database, repo_daemon) = match Database::init().await {
+    let database = match Database::init().await {
         Ok(db) => db,
         Err(err) => {
             eprintln!("{}", err);
@@ -28,7 +28,5 @@ async fn main() {
         }
     };
 
-    server::start(database);
-
-    repo_daemon.listen().await;
+    server::start(database).await;
 }
