@@ -1,5 +1,8 @@
 use super::Repo;
-use crate::database::{data::Post, Posts, Theme, Update};
+use crate::database::{
+    data::{Page, Post},
+    Pages, Posts, Theme, Update,
+};
 use git2::DiffFindOptions;
 use std::{
     collections::{BinaryHeap, HashMap},
@@ -10,10 +13,67 @@ use std::{
 impl Repo<'_> {
     pub async fn get_update(&mut self) -> Update {
         self.fetch();
-        let posts = self.update_posts().await;
+
+        let mut posts = BinaryHeap::new();
+        let mut pages = BinaryHeap::new();
+
+        for (path, info) in self.get_file_info().into_iter() {
+            let abs_path = self.tempdir.path().join(&path);
+
+            if path.starts_with("posts/") {
+                let post = Post {
+                    title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
+                    content: tokio::fs::read_to_string(abs_path).await.unwrap(),
+                    create_time: info.create_time.unwrap(),
+                    modify_time: info.modify_time,
+                };
+
+                posts.push(post);
+            } else if path.starts_with("pages/") {
+                let page = Page {
+                    title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
+                    content: tokio::fs::read_to_string(abs_path).await.unwrap(),
+                    create_time: info.create_time.unwrap(),
+                    modify_time: info.modify_time,
+                };
+
+                pages.push(page);
+            }
+        }
+
+        let posts = posts.into_sorted_vec();
+
+        let posts_url_map = posts
+            .iter()
+            .enumerate()
+            .map(|(idx, post)| (post.get_url(), idx))
+            .collect::<HashMap<String, usize>>();
+
+        let pages = pages.into_sorted_vec();
+
+        let pages_url_map = pages
+            .iter()
+            .enumerate()
+            .map(|(idx, page)| (page.get_url(), idx))
+            .collect::<HashMap<String, usize>>();
+
+        let posts = Posts {
+            data: posts,
+            url_map: posts_url_map,
+        };
+
+        let pages = Pages {
+            data: pages,
+            url_map: pages_url_map,
+        };
+
         let theme = Theme::new();
 
-        Update { posts, theme }
+        Update {
+            theme,
+            posts,
+            pages,
+        }
     }
 
     fn fetch(&mut self) {
@@ -29,35 +89,6 @@ impl Repo<'_> {
         self.repo
             .reset(&object, git2::ResetType::Hard, None)
             .unwrap();
-    }
-
-    pub async fn update_posts(&self) -> Posts {
-        let mut posts = BinaryHeap::new();
-
-        for (path, info) in self.get_file_info().into_iter() {
-            let abs_path = self.tempdir.path().join(&path);
-            let post = Post {
-                title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
-                content: tokio::fs::read_to_string(abs_path).await.unwrap(),
-                create_time: info.create_time.unwrap(),
-                modify_time: info.modify_time,
-            };
-
-            posts.push(post);
-        }
-
-        let posts = posts.into_sorted_vec();
-
-        let url_map = posts
-            .iter()
-            .enumerate()
-            .map(|(idx, post)| (post.get_url(), idx))
-            .collect::<HashMap<String, usize>>();
-
-        Posts {
-            data: posts,
-            url_map,
-        }
     }
 
     pub fn get_file_info(&self) -> HashMap<PathBuf, FileInfo> {

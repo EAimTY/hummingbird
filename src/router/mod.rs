@@ -2,8 +2,9 @@ use crate::database::Database;
 use hyper::{Body, Request, Response};
 use std::convert::Infallible;
 
-pub mod post;
-pub mod update;
+mod page;
+mod post;
+mod update;
 
 pub async fn handle(
     database: Database,

@@ -29,6 +29,7 @@ pub struct Settings {
 #[derive(Debug, Deserialize)]
 pub struct UrlPatterns {
     pub post_url: String,
+    pub page_url: String,
 }
 
 impl Config {
