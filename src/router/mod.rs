@@ -12,6 +12,7 @@ pub async fn handle(
     Ok(if true {
         post::get(database, request).await
     } else {
+        update::get(database, request).await;
         Response::new(Body::from("not found"))
     })
 }

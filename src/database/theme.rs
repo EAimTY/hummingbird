@@ -1,5 +1,6 @@
 use super::Data;
 
+#[derive(Debug)]
 pub struct Theme {}
 
 impl Theme {

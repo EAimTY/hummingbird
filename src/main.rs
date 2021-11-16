@@ -13,7 +13,7 @@ async fn main() {
     let mut config_builder = ConfigBuilder::new();
 
     match config_builder.parse(&args) {
-        Ok(config) => config,
+        Ok(_) => {}
         Err(err) => {
             eprintln!("{}\n\n{}", err, config_builder.get_usage());
             return;
