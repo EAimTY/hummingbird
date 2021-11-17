@@ -40,7 +40,7 @@ impl Config {
     }
 
     pub fn read() -> &'static Self {
-        CONFIG.get().expect("config is not initialized")
+        CONFIG.get().unwrap()
     }
 }
 
