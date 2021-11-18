@@ -8,8 +8,7 @@ pub struct Posts {
 }
 
 impl Posts {
-    pub fn get_post(&self, path: &str) -> &Post {
-        let id = self.url_map.get(path).unwrap();
-        &self.data[*id]
+    pub fn get(&self, path: &str) -> Option<&Post> {
+        self.url_map.get(path).map(|id| &self.data[*id])
     }
 }
