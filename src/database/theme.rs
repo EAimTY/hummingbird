@@ -1,3 +1,5 @@
+use hyper::{Body, Response};
+
 use super::Data;
 
 #[derive(Debug)]
@@ -8,10 +10,10 @@ impl Theme {
         Theme {}
     }
 
-    pub fn render(&self, data: Data) -> String {
+    pub fn render(&self, data: Data) -> Response<Body> {
         match data {
-            Data::Post(post) => post.content.clone(),
-            Data::Page(page) => page.content.clone(),
+            Data::Post(post) => Response::new(Body::from(post.content.clone())),
+            Data::Page(page) => Response::new(Body::from(page.content.clone())),
             Data::Archive(_archive) => todo!(),
         }
     }

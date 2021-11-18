@@ -17,15 +17,21 @@ pub struct Router {
 
 impl Router {
     pub fn init() {
-        let post_url = format!("^{}$", regex::escape(&Config::read().url_patterns.post_url));
-        let post_placeholders = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
-        let post_url = post_placeholders.replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
+        let update_url = regex::escape(&Config::read().url_patterns.update_url);
 
         let page_url = format!("^{}$", regex::escape(&Config::read().url_patterns.page_url));
         let page_placeholders = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
-        let page_url = page_placeholders.replace_all(&page_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
+        let page_url = page_placeholders
+            .replace_all(&page_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+")
+            .to_string();
 
-        let url_patterns = RegexSet::new(&[page_url, post_url]).unwrap();
+        let post_url = format!("^{}$", regex::escape(&Config::read().url_patterns.post_url));
+        let post_placeholders = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
+        let post_url = post_placeholders
+            .replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+")
+            .to_string();
+
+        let url_patterns = RegexSet::new(&[update_url, page_url, post_url]).unwrap();
         ROUTER.set(Self { url_patterns }).unwrap();
     }
 
@@ -38,12 +44,15 @@ impl Router {
         for pattern in router.get_url_pattern(&request) {
             match pattern {
                 0 => {
-                    if let Some(response) = page::get(&database, &request).await {
+                    return Ok(update::handle(database, request).await);
+                }
+                1 => {
+                    if let Some(response) = page::handle(&database, &request).await {
                         return Ok(response);
                     }
                 }
-                1 => {
-                    if let Some(response) = post::get(&database, &request).await {
+                2 => {
+                    if let Some(response) = post::handle(&database, &request).await {
                         return Ok(response);
                     }
                 }

@@ -1,9 +1,7 @@
 use crate::database::Database;
 use hyper::{Body, Request, Response};
 
-pub async fn get(database: &Database, request: &Request<Body>) -> Option<Response<Body>> {
-    let uri = request.uri().to_string();
-    let page = database.get_page(&uri).await;
-
-    Some(Response::new(Body::from(page)))
+pub async fn handle(database: &Database, request: &Request<Body>) -> Option<Response<Body>> {
+    let path = request.uri().path();
+    database.get_page(path).await
 }

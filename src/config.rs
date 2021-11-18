@@ -28,8 +28,9 @@ pub struct Settings {
 
 #[derive(Debug, Deserialize)]
 pub struct UrlPatterns {
-    pub post_url: String,
+    pub update_url: String,
     pub page_url: String,
+    pub post_url: String,
 }
 
 impl Config {
@@ -66,7 +67,7 @@ impl<'cfg> ConfigBuilder<'cfg> {
             .usage(&format!("Usage: {} [options]", self.program.unwrap()))
     }
 
-    pub fn parse(&mut self, args: &'cfg Vec<String>) -> Result<()> {
+    pub fn parse(&mut self, args: &'cfg [String]) -> Result<()> {
         self.program = Some(&args[0]);
 
         let matches = self.opts.parse(&args[1..])?;

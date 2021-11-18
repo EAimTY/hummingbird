@@ -8,8 +8,7 @@ pub struct Pages {
 }
 
 impl Pages {
-    pub fn get_page(&self, path: &str) -> &Page {
-        let id = self.url_map.get(path).unwrap();
-        &self.data[*id]
+    pub fn get(&self, path: &str) -> Option<&Page> {
+        self.url_map.get(path).map(|id| &self.data[*id])
     }
 }

@@ -18,9 +18,8 @@ impl Repo<'_> {
         let mut pages = BinaryHeap::new();
 
         for (path, info) in self.get_file_info().into_iter() {
-            let abs_path = self.tempdir.path().join(&path);
-
             if path.starts_with("posts/") {
+                let abs_path = self.tempdir.path().join(&path);
                 let post = Post {
                     title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
                     content: tokio::fs::read_to_string(abs_path).await.unwrap(),
@@ -30,6 +29,7 @@ impl Repo<'_> {
 
                 posts.push(post);
             } else if path.starts_with("pages/") {
+                let abs_path = self.tempdir.path().join(&path);
                 let page = Page {
                     title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
                     content: tokio::fs::read_to_string(abs_path).await.unwrap(),
@@ -124,7 +124,8 @@ impl Repo<'_> {
                         let path = delta.new_file().path().unwrap().to_path_buf();
 
                         match status_map.entry(path.clone()).or_insert_with(|| {
-                            if path.starts_with(PathBuf::from("posts/"))
+                            if (path.starts_with(PathBuf::from("posts/"))
+                                || path.starts_with(PathBuf::from("pages/")))
                                 && path.extension() == Some(OsStr::new("md"))
                             {
                                 FileStatus::Created
@@ -145,7 +146,8 @@ impl Repo<'_> {
                         let path = delta.new_file().path().unwrap().to_path_buf();
 
                         match status_map.entry(path.clone()).or_insert_with(|| {
-                            if path.starts_with(PathBuf::from("posts/"))
+                            if (path.starts_with(PathBuf::from("posts/"))
+                                || path.starts_with(PathBuf::from("pages/")))
                                 && path.extension() == Some(OsStr::new("md"))
                             {
                                 FileStatus::Created
@@ -177,7 +179,9 @@ impl Repo<'_> {
                         let status = status_map
                             .entry(new_path.clone())
                             .or_insert_with(|| {
-                                if new_path.starts_with(PathBuf::from("posts/")) {
+                                if new_path.starts_with(PathBuf::from("posts/"))
+                                    || new_path.starts_with(PathBuf::from("pages/"))
+                                {
                                     FileStatus::Created
                                 } else {
                                     FileStatus::Deleted
