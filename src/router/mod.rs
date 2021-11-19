@@ -18,9 +18,15 @@ pub struct Router {
 
 impl Router {
     pub fn init() {
-        let index_url = regex::escape(&Config::read().url_patterns.index_url);
+        let index_url = format!(
+            "^{}$",
+            regex::escape(&Config::read().url_patterns.index_url)
+        );
 
-        let update_url = regex::escape(&Config::read().url_patterns.update_url);
+        let update_url = format!(
+            "^{}$",
+            regex::escape(&Config::read().url_patterns.update_url)
+        );
 
         let page_url = format!("^{}$", regex::escape(&Config::read().url_patterns.page_url));
         let page_placeholders = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
