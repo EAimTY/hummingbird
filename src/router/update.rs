@@ -1,7 +1,10 @@
 use crate::database::Database;
 use hyper::{Body, Request, Response};
 
-pub async fn handle(mut database: Database, _request: Request<Body>) -> Response<Body> {
-    database.update().await.unwrap();
-    Response::new(Body::from("done"))
+pub async fn handle(database: &mut Database, _request: &Request<Body>) -> Option<Response<Body>> {
+    if let Ok(_) = database.update().await {
+        Some(Response::new(Body::from("update done")))
+    } else {
+        Some(Response::new(Body::from("update failed")))
+    }
 }

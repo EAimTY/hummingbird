@@ -1,16 +1,44 @@
-use super::Repo;
-use crate::database::{
-    data::{Page, Post},
-    Pages, Posts, Theme, Update,
+use crate::{
+    config::Config,
+    database::{
+        data::{Page, Post},
+        Pages, Posts, Theme, Update,
+    },
 };
-use git2::DiffFindOptions;
+use anyhow::Result;
+use git2::{
+    build::RepoBuilder, Cred, DiffFindOptions, FetchOptions, ProxyOptions, RemoteCallbacks,
+    Repository,
+};
 use std::{
     collections::{BinaryHeap, HashMap},
     ffi::OsStr,
     path::PathBuf,
 };
+use tempfile::TempDir;
 
-impl Repo<'_> {
+pub struct Repo {
+    repo: Repository,
+    tempdir: TempDir,
+    fetch_options: FetchOptions<'static>,
+}
+
+impl Repo {
+    pub fn init() -> Result<Self> {
+        let mut builder = RepoBuilder::new();
+        builder.fetch_options(get_fetch_options());
+
+        let tempdir = TempDir::new()?;
+
+        let repo = builder.clone(&Config::read().git.repository, tempdir.path())?;
+
+        Ok(Self {
+            repo,
+            tempdir,
+            fetch_options: get_fetch_options(),
+        })
+    }
+
     pub async fn get_update(&mut self) -> Update {
         self.fetch();
 
@@ -219,6 +247,31 @@ impl Repo<'_> {
 
         info_map
     }
+}
+
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl Send for Repo {}
+unsafe impl Sync for Repo {}
+
+fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
+    let mut fetch_options = FetchOptions::new();
+
+    if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
+        let mut proxy_option = ProxyOptions::new();
+        proxy_option.url(proxy_url);
+        fetch_options.proxy_options(proxy_option);
+    }
+
+    if let (Some(username), Some(password)) = (
+        Config::read().git.user.as_ref(),
+        Config::read().git.password.as_ref(),
+    ) {
+        let mut remote_callbacks = RemoteCallbacks::new();
+        remote_callbacks.credentials(move |_, _, _| Cred::userpass_plaintext(username, password));
+        fetch_options.remote_callbacks(remote_callbacks);
+    }
+
+    fetch_options
 }
 
 #[derive(Clone)]
