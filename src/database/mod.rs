@@ -26,11 +26,12 @@ pub struct Database {
 impl Database {
     pub async fn init() -> Result<Self> {
         let mut repo = Repo::init()?;
+
         let Update {
             theme,
-            posts,
             pages,
-        } = repo.get_update().await;
+            posts,
+        } = repo.get_update().await?;
 
         Ok(Self {
             data: Arc::new(RwLock::new(DatabaseData {

@@ -39,18 +39,18 @@ impl Repo {
         })
     }
 
-    pub async fn get_update(&mut self) -> Update {
-        self.fetch();
+    pub async fn get_update(&mut self) -> Result<Update> {
+        self.fetch()?;
 
         let mut posts = BinaryHeap::new();
         let mut pages = BinaryHeap::new();
 
-        for (path, info) in self.get_file_info().into_iter() {
+        for (path, info) in self.get_file_info()?.into_iter() {
             if path.starts_with("posts/") {
                 let abs_path = self.tempdir.path().join(&path);
                 let post = Post {
                     title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
-                    content: tokio::fs::read_to_string(abs_path).await.unwrap(),
+                    content: tokio::fs::read_to_string(abs_path).await?,
                     create_time: info.create_time.unwrap(),
                     modify_time: info.modify_time,
                 };
@@ -60,7 +60,7 @@ impl Repo {
                 let abs_path = self.tempdir.path().join(&path);
                 let page = Page {
                     title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
-                    content: tokio::fs::read_to_string(abs_path).await.unwrap(),
+                    content: tokio::fs::read_to_string(abs_path).await?,
                     create_time: info.create_time.unwrap(),
                     modify_time: info.modify_time,
                 };
@@ -97,52 +97,43 @@ impl Repo {
 
         let theme = Theme::new();
 
-        Update {
+        Ok(Update {
             theme,
             posts,
             pages,
-        }
+        })
     }
 
-    fn fetch(&mut self) {
-        let mut origin_remote = self.repo.find_remote("origin").unwrap();
-        origin_remote
-            .fetch(&["master"], Some(&mut self.fetch_options), None)
-            .unwrap();
-        let oid = self
-            .repo
-            .refname_to_id("refs/remotes/origin/master")
-            .unwrap();
-        let object = self.repo.find_object(oid, None).unwrap();
-        self.repo
-            .reset(&object, git2::ResetType::Hard, None)
-            .unwrap();
+    fn fetch(&mut self) -> Result<()> {
+        let mut origin_remote = self.repo.find_remote("origin")?;
+        origin_remote.fetch(&["master"], Some(&mut self.fetch_options), None)?;
+        let oid = self.repo.refname_to_id("refs/remotes/origin/master")?;
+        let object = self.repo.find_object(oid, None)?;
+        self.repo.reset(&object, git2::ResetType::Hard, None)?;
+
+        Ok(())
     }
 
-    pub fn get_file_info(&self) -> HashMap<PathBuf, FileInfo> {
+    pub fn get_file_info(&self) -> Result<HashMap<PathBuf, FileInfo>> {
         let mut info_map = HashMap::new();
         let mut status_map = HashMap::new();
 
-        let mut revwalk = self.repo.revwalk().unwrap();
-        revwalk.push_head().unwrap();
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.push_head()?;
 
         for step in revwalk {
-            let oid = step.unwrap();
-            let commit = self.repo.find_commit(oid).unwrap();
+            let oid = step?;
+            let commit = self.repo.find_commit(oid)?;
             let a = if commit.parents().len() == 1 {
-                let parent = commit.parent(0).unwrap();
-                Some(parent.tree().unwrap())
+                let parent = commit.parent(0)?;
+                Some(parent.tree()?)
             } else {
                 None
             };
-            let b = commit.tree().unwrap();
+            let b = commit.tree()?;
 
-            let mut diff = self
-                .repo
-                .diff_tree_to_tree(a.as_ref(), Some(&b), None)
-                .unwrap();
-            diff.find_similar(Some(DiffFindOptions::new().renames(true)))
-                .unwrap();
+            let mut diff = self.repo.diff_tree_to_tree(a.as_ref(), Some(&b), None)?;
+            diff.find_similar(Some(DiffFindOptions::new().renames(true)))?;
 
             let deltas = diff.deltas();
 
@@ -245,7 +236,7 @@ impl Repo {
             }
         }
 
-        info_map
+        Ok(info_map)
     }
 }
 
