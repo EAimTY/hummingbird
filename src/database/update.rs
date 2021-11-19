@@ -10,6 +10,8 @@ impl Database {
             posts,
             pages,
         } = database.repo.get_update().await;
+
+        database.pages = pages;
         database.posts = posts;
 
         Ok(())

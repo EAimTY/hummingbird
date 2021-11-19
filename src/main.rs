@@ -28,5 +28,11 @@ async fn main() {
         }
     };
 
-    server::start(database).await;
+    match server::start(database).await {
+        Ok(_) => {}
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
+    }
 }

@@ -12,7 +12,7 @@ mod theme;
 mod update;
 
 pub struct DatabaseData {
-    repo: Repo<'static>,
+    repo: Repo,
     theme: Theme,
     posts: Posts,
     pages: Pages,
