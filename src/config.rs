@@ -24,7 +24,7 @@ pub struct Git {
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
-    pub update_token: String,
+    pub update_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
