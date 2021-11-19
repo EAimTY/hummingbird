@@ -37,14 +37,14 @@ impl Router {
 
     pub async fn route(
         mut database: Database,
-        request: Request<Body>,
+        mut request: Request<Body>,
     ) -> Result<Response<Body>, Infallible> {
         let router = ROUTER.get().unwrap();
 
         for pattern in router.get_url_pattern(&request) {
             match pattern {
                 0 => {
-                    if let Some(response) = update::handle(&mut database, &request).await {
+                    if let Some(response) = update::handle(&mut database, &mut request).await {
                         return Ok(response);
                     }
                 }

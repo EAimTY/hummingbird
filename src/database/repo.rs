@@ -8,7 +8,7 @@ use crate::{
 use anyhow::{Context, Result};
 use git2::{
     build::RepoBuilder, Cred, DiffFindOptions, FetchOptions, ProxyOptions, RemoteCallbacks,
-    Repository,
+    Repository, ResetType,
 };
 use std::{
     collections::{BinaryHeap, HashMap},
@@ -125,7 +125,7 @@ impl Repo {
         };
 
         let object = self.repo.find_object(oid, None)?;
-        self.repo.reset(&object, git2::ResetType::Hard, None)?;
+        self.repo.reset(&object, ResetType::Hard, None)?;
 
         Ok(())
     }
