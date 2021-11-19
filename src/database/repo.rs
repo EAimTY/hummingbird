@@ -5,7 +5,7 @@ use crate::{
         Pages, Posts, Theme, Update,
     },
 };
-use anyhow::{Context, Result};
+use anyhow::Result;
 use git2::{
     build::RepoBuilder, Cred, DiffFindOptions, FetchOptions, ProxyOptions, RemoteCallbacks,
     Repository, ResetType,
@@ -20,7 +20,6 @@ use tempfile::TempDir;
 pub struct Repo {
     repo: Repository,
     tempdir: TempDir,
-    fetch_options: FetchOptions<'static>,
 }
 
 impl Repo {
@@ -32,11 +31,7 @@ impl Repo {
 
         let repo = builder.clone(&Config::read().git.repository, tempdir.path())?;
 
-        Ok(Self {
-            repo,
-            tempdir,
-            fetch_options: get_fetch_options(),
-        })
+        Ok(Self { repo, tempdir })
     }
 
     pub async fn get_update(&mut self) -> Result<Update> {
@@ -107,22 +102,15 @@ impl Repo {
     fn fetch(&mut self) -> Result<()> {
         let mut origin_remote = self.repo.find_remote("origin")?;
 
-        let oid;
-        if let Some(branch) = &Config::read().git.branch {
-            origin_remote.fetch(&[branch], Some(&mut self.fetch_options), None)?;
-            oid = self
-                .repo
-                .refname_to_id(&format!("refs/remotes/origin/{}", branch))?;
-        } else {
-            let default_branch = origin_remote.default_branch()?;
-            let default_branch = default_branch
-                .as_str()
-                .context("failed to get the default branch")?;
-            origin_remote.fetch(&[default_branch], Some(&mut self.fetch_options), None)?;
-            oid = self
-                .repo
-                .refname_to_id(&format!("refs/remotes/origin/{}", default_branch))?;
-        };
+        origin_remote.fetch(
+            &[&Config::read().git.branch],
+            Some(&mut get_fetch_options()),
+            None,
+        )?;
+        let oid = self.repo.refname_to_id(&format!(
+            "refs/remotes/origin/{}",
+            &Config::read().git.branch
+        ))?;
 
         let object = self.repo.find_object(oid, None)?;
         self.repo.reset(&object, ResetType::Hard, None)?;
