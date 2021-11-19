@@ -29,6 +29,7 @@ pub struct Settings {
 
 #[derive(Debug, Deserialize)]
 pub struct UrlPatterns {
+    pub index_url: String,
     pub update_url: String,
     pub page_url: String,
     pub post_url: String,
