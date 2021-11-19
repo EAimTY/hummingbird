@@ -4,6 +4,7 @@ use once_cell::sync::OnceCell;
 use regex::{Regex, RegexSet};
 use std::convert::Infallible;
 
+mod index;
 mod page;
 mod post;
 mod update;
@@ -17,6 +18,8 @@ pub struct Router {
 
 impl Router {
     pub fn init() {
+        let index_url = regex::escape(&Config::read().url_patterns.index_url);
+
         let update_url = regex::escape(&Config::read().url_patterns.update_url);
 
         let page_url = format!("^{}$", regex::escape(&Config::read().url_patterns.page_url));
@@ -31,7 +34,7 @@ impl Router {
             .replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+")
             .to_string();
 
-        let url_patterns = RegexSet::new(&[update_url, page_url, post_url]).unwrap();
+        let url_patterns = RegexSet::new(&[index_url, update_url, page_url, post_url]).unwrap();
         ROUTER.set(Self { url_patterns }).unwrap();
     }
 
@@ -44,16 +47,21 @@ impl Router {
         for pattern in router.get_url_pattern(&request) {
             match pattern {
                 0 => {
-                    if let Some(response) = update::handle(&mut database, &mut request).await {
+                    if let Some(response) = index::handle(&database, &request).await {
                         return Ok(response);
                     }
                 }
                 1 => {
-                    if let Some(response) = page::handle(&database, &request).await {
+                    if let Some(response) = update::handle(&mut database, &mut request).await {
                         return Ok(response);
                     }
                 }
                 2 => {
+                    if let Some(response) = page::handle(&database, &request).await {
+                        return Ok(response);
+                    }
+                }
+                3 => {
                     if let Some(response) = post::handle(&database, &request).await {
                         return Ok(response);
                     }
