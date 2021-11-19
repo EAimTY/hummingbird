@@ -9,10 +9,11 @@ impl Database {
             theme,
             posts,
             pages,
-        } = database.repo.get_update().await;
+        } = database.repo.get_update().await?;
 
-        database.pages = pages;
+        database.theme = theme;
         database.posts = posts;
+        database.pages = pages;
 
         Ok(())
     }
