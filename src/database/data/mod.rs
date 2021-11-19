@@ -1,12 +1,12 @@
-pub use self::{archive::Archive, page::Page, post::Post};
+pub use self::{list::List, page::Page, post::Post};
 
-mod archive;
+mod list;
 mod page;
 mod post;
 
 pub enum Data<'data> {
     Post(&'data Post),
     Page(&'data Page),
-    Archive(Archive<'data>),
+    List(List<'data>),
     // ...
 }

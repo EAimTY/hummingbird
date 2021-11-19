@@ -14,7 +14,7 @@ impl Theme {
         match data {
             Data::Post(post) => Response::new(Body::from(post.content.clone())),
             Data::Page(page) => Response::new(Body::from(page.content.clone())),
-            Data::Archive(_archive) => todo!(),
+            Data::List(_list) => todo!(),
         }
     }
 }
