@@ -16,7 +16,7 @@ pub struct Config {
 #[derive(Debug, Deserialize)]
 pub struct Git {
     pub repository: String,
-    pub branch: Option<String>,
+    pub branch: String,
     pub user: Option<String>,
     pub password: Option<String>,
     pub proxy: Option<String>,
