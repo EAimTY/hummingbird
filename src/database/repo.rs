@@ -4,6 +4,7 @@ use crate::{
     Config,
 };
 use anyhow::Result;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use git2::{
     build::RepoBuilder, Cred, DiffFindOptions, FetchOptions, ProxyOptions, RemoteCallbacks,
     Repository, ResetType,
@@ -48,8 +49,12 @@ impl Repo {
                     name: author,
                     email: author_email,
                 } = info.author.unwrap();
-                let create_time = info.create_time.unwrap();
-                let modify_time = info.modify_time;
+                let create_time = DateTime::from_utc(
+                    NaiveDateTime::from_timestamp(info.create_time.unwrap(), 0),
+                    Utc,
+                );
+                let modify_time =
+                    DateTime::from_utc(NaiveDateTime::from_timestamp(info.modify_time, 0), Utc);
 
                 let post = Post {
                     title,
@@ -70,8 +75,12 @@ impl Repo {
                     name: author,
                     email: author_email,
                 } = info.author.unwrap();
-                let create_time = info.create_time.unwrap();
-                let modify_time = info.modify_time;
+                let create_time = DateTime::from_utc(
+                    NaiveDateTime::from_timestamp(info.create_time.unwrap(), 0),
+                    Utc,
+                );
+                let modify_time =
+                    DateTime::from_utc(NaiveDateTime::from_timestamp(info.modify_time, 0), Utc);
 
                 let page = Page {
                     title,
