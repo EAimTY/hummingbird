@@ -43,21 +43,45 @@ impl Repo {
         for (path, info) in self.get_file_info()?.into_iter() {
             if path.starts_with("posts/") {
                 let abs_path = self.tempdir.path().join(&path);
+
+                let title = path.file_stem().unwrap().to_str().unwrap().to_owned();
+                let content = tokio::fs::read_to_string(abs_path).await?;
+                let Author {
+                    name: author,
+                    email: author_email,
+                } = info.author.unwrap();
+                let create_time = info.create_time.unwrap();
+                let modify_time = info.modify_time;
+
                 let post = Post {
-                    title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
-                    content: tokio::fs::read_to_string(abs_path).await?,
-                    create_time: info.create_time.unwrap(),
-                    modify_time: info.modify_time,
+                    title,
+                    content,
+                    author,
+                    author_email,
+                    create_time,
+                    modify_time,
                 };
 
                 posts.push(post);
             } else if path.starts_with("pages/") {
                 let abs_path = self.tempdir.path().join(&path);
+
+                let title = path.file_stem().unwrap().to_str().unwrap().to_owned();
+                let content = tokio::fs::read_to_string(abs_path).await?;
+                let Author {
+                    name: author,
+                    email: author_email,
+                } = info.author.unwrap();
+                let create_time = info.create_time.unwrap();
+                let modify_time = info.modify_time;
+
                 let page = Page {
-                    title: path.file_stem().unwrap().to_str().unwrap().to_owned(),
-                    content: tokio::fs::read_to_string(abs_path).await?,
-                    create_time: info.create_time.unwrap(),
-                    modify_time: info.modify_time,
+                    title,
+                    content,
+                    author,
+                    author_email,
+                    create_time,
+                    modify_time,
                 };
 
                 pages.push(page);
@@ -182,11 +206,19 @@ impl Repo {
                                 let info = info_map
                                     .entry(path)
                                     .or_insert_with(|| FileInfo::new(commit.time().seconds()));
-                                info.set_create_time(commit.time().seconds());
+                                info.set(
+                                    commit.author().name().unwrap_or("Anonymous"),
+                                    commit.author().email(),
+                                    commit.time().seconds(),
+                                );
                             }
                             FileStatus::Renamed(new_path) => {
                                 if let Some(info) = info_map.get_mut(new_path) {
-                                    info.set_create_time(commit.time().seconds());
+                                    info.set(
+                                        commit.author().name().unwrap_or("Anonymous"),
+                                        commit.author().email(),
+                                        commit.time().seconds(),
+                                    );
                                 } else {
                                     unreachable!();
                                 }
@@ -271,6 +303,7 @@ fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
 
 #[derive(Clone)]
 pub struct FileInfo {
+    author: Option<Author>,
     create_time: Option<i64>,
     modify_time: i64,
 }
@@ -278,14 +311,25 @@ pub struct FileInfo {
 impl FileInfo {
     fn new(modify_time: i64) -> Self {
         Self {
+            author: None,
             create_time: None,
             modify_time,
         }
     }
 
-    fn set_create_time(&mut self, create_time: i64) {
+    fn set(&mut self, author_name: &str, author_email: Option<&str>, create_time: i64) {
+        self.author = Some(Author {
+            name: author_name.to_string(),
+            email: author_email.map(|email| email.to_string()),
+        });
         self.create_time = Some(create_time);
     }
+}
+
+#[derive(Clone)]
+pub struct Author {
+    name: String,
+    email: Option<String>,
 }
 
 #[derive(Clone)]
