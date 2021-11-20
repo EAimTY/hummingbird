@@ -25,6 +25,8 @@ pub struct Git {
 #[derive(Debug, Deserialize)]
 pub struct Settings {
     pub update_token: Option<String>,
+    pub index_posts_count: usize,
+    pub index_posts_from_old_to_new: bool,
 }
 
 #[derive(Debug, Deserialize)]

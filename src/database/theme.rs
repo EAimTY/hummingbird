@@ -21,7 +21,6 @@ impl Theme {
                 )),
                 _ => todo!(),
             },
-            _ => todo!(),
         }
     }
 }
