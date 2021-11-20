@@ -30,17 +30,20 @@ impl Router {
 
         let page_url = format!("^{}$", regex::escape(&Config::read().url_patterns.page_url));
         let page_args = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
-        let page_url = page_args
-            .replace_all(&page_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+")
-            .to_string();
+        let page_url = page_args.replace_all(&page_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
 
         let post_url = format!("^{}$", regex::escape(&Config::read().url_patterns.post_url));
         let post_args = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
-        let post_url = post_args
-            .replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+")
-            .to_string();
+        let post_url = post_args.replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
 
-        let url_patterns = RegexSet::new(&[index_url, update_url, page_url, post_url]).unwrap();
+        let url_patterns = RegexSet::new(&[
+            &index_url,
+            &update_url,
+            page_url.as_ref(),
+            post_url.as_ref(),
+        ])
+        .unwrap();
+
         ROUTER.set(Self { url_patterns }).unwrap();
     }
 

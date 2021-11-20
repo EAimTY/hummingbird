@@ -54,6 +54,12 @@ pub struct ConfigBuilder<'cfg> {
     program: Option<&'cfg str>,
 }
 
+impl Default for ConfigBuilder<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'cfg> ConfigBuilder<'cfg> {
     pub fn new() -> Self {
         let mut opts = Options::new();

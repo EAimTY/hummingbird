@@ -173,9 +173,12 @@ impl Repo {
                             }
                         }) {
                             FileStatus::Created => {
-                                info_map
-                                    .entry(path)
-                                    .or_insert_with(|| FileInfo::new(commit.time().seconds()));
+                                info_map.entry(path).or_insert_with(|| {
+                                    FileInfo::new(
+                                        commit.time().seconds()
+                                            + commit.time().offset_minutes() as i64 * 60,
+                                    )
+                                });
                             }
                             _ => {}
                         }
@@ -195,13 +198,17 @@ impl Repo {
                             }
                         }) {
                             FileStatus::Created => {
-                                let info = info_map
-                                    .entry(path)
-                                    .or_insert_with(|| FileInfo::new(commit.time().seconds()));
+                                let info = info_map.entry(path).or_insert_with(|| {
+                                    FileInfo::new(
+                                        commit.time().seconds()
+                                            + commit.time().offset_minutes() as i64 * 60,
+                                    )
+                                });
                                 info.set(
                                     commit.author().name().unwrap_or("Anonymous"),
                                     commit.author().email(),
-                                    commit.time().seconds(),
+                                    commit.time().seconds()
+                                        + commit.time().offset_minutes() as i64 * 60,
                                 );
                             }
                             FileStatus::Renamed(new_path) => {
@@ -209,7 +216,8 @@ impl Repo {
                                     info.set(
                                         commit.author().name().unwrap_or("Anonymous"),
                                         commit.author().email(),
-                                        commit.time().seconds(),
+                                        commit.time().seconds()
+                                            + commit.time().offset_minutes() as i64 * 60,
                                     );
                                 } else {
                                     unreachable!();
@@ -237,9 +245,12 @@ impl Repo {
                             .clone();
                         match status {
                             FileStatus::Created => {
-                                info_map
-                                    .entry(new_path.clone())
-                                    .or_insert_with(|| FileInfo::new(commit.time().seconds()));
+                                info_map.entry(new_path.clone()).or_insert_with(|| {
+                                    FileInfo::new(
+                                        commit.time().seconds()
+                                            + commit.time().offset_minutes() as i64 * 60,
+                                    )
+                                });
                                 status_map.insert(old_path, FileStatus::Renamed(new_path.clone()));
                             }
                             FileStatus::Renamed(new_new_path) => {
@@ -311,8 +322,8 @@ impl FileInfo {
 
     fn set(&mut self, author_name: &str, author_email: Option<&str>, create_time: i64) {
         self.author = Some(Author {
-            name: author_name.to_string(),
-            email: author_email.map(|email| email.to_string()),
+            name: author_name.to_owned(),
+            email: author_email.map(|email| email.to_owned()),
         });
         self.create_time = Some(create_time);
     }
