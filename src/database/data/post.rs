@@ -1,4 +1,5 @@
 use crate::Config;
+use chrono::{DateTime, Utc};
 use std::cmp::Ordering;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -7,8 +8,8 @@ pub struct Post {
     pub content: String,
     pub author: String,
     pub author_email: Option<String>,
-    pub create_time: i64,
-    pub modify_time: i64,
+    pub create_time: DateTime<Utc>,
+    pub modify_time: DateTime<Utc>,
 }
 
 impl Post {

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
+chrono = { version = "0.4", features = ["std"], default-features = false }
 getopts = "0.2"
 git2 = { version = "0.13", features = ["https"], default-features = false }
 hyper = { version = "0.14", features = ["http1", "http2", "server", "runtime"] }
