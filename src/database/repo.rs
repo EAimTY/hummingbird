@@ -4,7 +4,6 @@ use crate::{
     Config,
 };
 use anyhow::Result;
-use chrono::{DateTime, NaiveDateTime, Utc};
 use git2::{
     build::RepoBuilder, Cred, DiffFindOptions, FetchOptions, ProxyOptions, RemoteCallbacks,
     Repository, ResetType,
@@ -49,22 +48,15 @@ impl Repo {
                     name: author,
                     email: author_email,
                 } = info.author.unwrap();
-                let create_time = DateTime::from_utc(
-                    NaiveDateTime::from_timestamp(info.create_time.unwrap(), 0),
-                    Utc,
-                );
-                let modify_time =
-                    DateTime::from_utc(NaiveDateTime::from_timestamp(info.modify_time, 0), Utc);
 
-                let post = Post {
+                let post = Post::new(
                     title,
                     content,
                     author,
                     author_email,
-                    create_time,
-                    modify_time,
-                };
-
+                    info.create_time.unwrap(),
+                    info.modify_time,
+                );
                 posts.push(post);
             } else if path.starts_with("pages/") {
                 let abs_path = self.tempdir.path().join(&path);
@@ -75,22 +67,15 @@ impl Repo {
                     name: author,
                     email: author_email,
                 } = info.author.unwrap();
-                let create_time = DateTime::from_utc(
-                    NaiveDateTime::from_timestamp(info.create_time.unwrap(), 0),
-                    Utc,
-                );
-                let modify_time =
-                    DateTime::from_utc(NaiveDateTime::from_timestamp(info.modify_time, 0), Utc);
 
-                let page = Page {
+                let page = Page::new(
                     title,
                     content,
                     author,
                     author_email,
-                    create_time,
-                    modify_time,
-                };
-
+                    info.create_time.unwrap(),
+                    info.modify_time,
+                );
                 pages.push(page);
             }
         }
@@ -100,7 +85,7 @@ impl Repo {
         let posts_url_map = posts
             .iter()
             .enumerate()
-            .map(|(idx, post)| (post.get_url(), idx))
+            .map(|(idx, post)| (post.url.clone(), idx))
             .collect::<HashMap<String, usize>>();
 
         let pages = pages.into_sorted_vec();
@@ -108,14 +93,12 @@ impl Repo {
         let pages_url_map = pages
             .iter()
             .enumerate()
-            .map(|(idx, page)| (page.get_url(), idx))
+            .map(|(idx, page)| (page.url.clone(), idx))
             .collect::<HashMap<String, usize>>();
 
-        let posts = Posts::new(posts, posts_url_map);
-
-        let pages = Pages::new(pages, pages_url_map);
-
         let theme = Theme::new();
+        let posts = Posts::new(posts, posts_url_map);
+        let pages = Pages::new(pages, pages_url_map);
 
         Ok(Update {
             theme,
