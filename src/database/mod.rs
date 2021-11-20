@@ -58,4 +58,12 @@ impl Database {
             .get(path)
             .map(|post| database.theme.render(Data::Post(post)))
     }
+
+    pub async fn get_index(&self) -> Option<Response<Body>> {
+        let database = self.data.read().await;
+        database
+            .posts
+            .get_index(5, false)
+            .map(|list| database.theme.render(Data::List(list)))
+    }
 }
