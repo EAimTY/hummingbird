@@ -1,4 +1,4 @@
-use super::Post;
+use crate::data::Post;
 use std::ops::Range;
 
 pub enum List<'list> {

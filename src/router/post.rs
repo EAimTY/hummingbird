@@ -1,10 +1,10 @@
-use crate::database::Database;
+use crate::Database;
 use hyper::{Body, Method, Request, Response};
 
-pub async fn handle(database: &Database, request: &Request<Body>) -> Option<Response<Body>> {
-    if request.method() == Method::GET {
-        let path = request.uri().path();
-        return database.get_post(path).await;
+pub async fn handle(db: &Database, req: &Request<Body>) -> Option<Response<Body>> {
+    if req.method() == Method::GET {
+        let path = req.uri().path();
+        return db.get_post(path).await;
     }
     None
 }

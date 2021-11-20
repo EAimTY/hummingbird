@@ -1,9 +1,9 @@
-use crate::database::Database;
+use crate::Database;
 use hyper::{Body, Method, Request, Response};
 
-pub async fn handle(database: &Database, request: &Request<Body>) -> Option<Response<Body>> {
-    if request.method() == Method::GET {
-        return database.get_index().await;
+pub async fn handle(db: &Database, req: &Request<Body>) -> Option<Response<Body>> {
+    if req.method() == Method::GET {
+        return db.get_index().await;
     }
     None
 }

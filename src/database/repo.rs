@@ -1,9 +1,7 @@
 use crate::{
-    config::Config,
-    database::{
-        data::{Page, Post},
-        Pages, Posts, Theme, Update,
-    },
+    data::{Page, Post},
+    database::{Pages, Posts, Theme, Update},
+    Config,
 };
 use anyhow::Result;
 use git2::{
@@ -104,15 +102,9 @@ impl Repo {
             .map(|(idx, page)| (page.get_url(), idx))
             .collect::<HashMap<String, usize>>();
 
-        let posts = Posts {
-            data: posts,
-            url_map: posts_url_map,
-        };
+        let posts = Posts::new(posts, posts_url_map);
 
-        let pages = Pages {
-            data: pages,
-            url_map: pages_url_map,
-        };
+        let pages = Pages::new(pages, pages_url_map);
 
         let theme = Theme::new();
 
@@ -142,7 +134,7 @@ impl Repo {
         Ok(())
     }
 
-    pub fn get_file_info(&self) -> Result<HashMap<PathBuf, FileInfo>> {
+    fn get_file_info(&self) -> Result<HashMap<PathBuf, FileInfo>> {
         let mut info_map = HashMap::new();
         let mut status_map = HashMap::new();
 
@@ -302,7 +294,7 @@ fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
 }
 
 #[derive(Clone)]
-pub struct FileInfo {
+struct FileInfo {
     author: Option<Author>,
     create_time: Option<i64>,
     modify_time: i64,
@@ -327,7 +319,7 @@ impl FileInfo {
 }
 
 #[derive(Clone)]
-pub struct Author {
+struct Author {
     name: String,
     email: Option<String>,
 }

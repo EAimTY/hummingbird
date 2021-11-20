@@ -1,8 +1,8 @@
-pub use self::{list::List, page::Page, post::Post};
-
 mod list;
 mod page;
 mod post;
+
+pub use self::{list::List, page::Page, post::Post};
 
 pub enum Data<'data> {
     Post(&'data Post),

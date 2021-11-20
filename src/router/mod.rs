@@ -1,4 +1,4 @@
-use crate::{config::Config, database::Database};
+use crate::{Config, Database};
 use hyper::{Body, Request, Response};
 use once_cell::sync::OnceCell;
 use regex::{Regex, RegexSet};
@@ -29,14 +29,14 @@ impl Router {
         );
 
         let page_url = format!("^{}$", regex::escape(&Config::read().url_patterns.page_url));
-        let page_placeholders = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
-        let page_url = page_placeholders
+        let page_args = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
+        let page_url = page_args
             .replace_all(&page_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+")
             .to_string();
 
         let post_url = format!("^{}$", regex::escape(&Config::read().url_patterns.post_url));
-        let post_placeholders = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
-        let post_url = post_placeholders
+        let post_args = Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}").unwrap();
+        let post_url = post_args
             .replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+")
             .to_string();
 
@@ -45,30 +45,30 @@ impl Router {
     }
 
     pub async fn route(
-        mut database: Database,
-        mut request: Request<Body>,
+        mut db: Database,
+        mut req: Request<Body>,
     ) -> Result<Response<Body>, Infallible> {
         let router = ROUTER.get().unwrap();
 
-        for pattern in router.get_url_pattern(&request) {
+        for pattern in router.get_url_pattern(&req) {
             match pattern {
                 0 => {
-                    if let Some(response) = index::handle(&database, &request).await {
+                    if let Some(response) = index::handle(&db, &req).await {
                         return Ok(response);
                     }
                 }
                 1 => {
-                    if let Some(response) = update::handle(&mut database, &mut request).await {
+                    if let Some(response) = update::handle(&mut db, &mut req).await {
                         return Ok(response);
                     }
                 }
                 2 => {
-                    if let Some(response) = page::handle(&database, &request).await {
+                    if let Some(response) = page::handle(&db, &req).await {
                         return Ok(response);
                     }
                 }
                 3 => {
-                    if let Some(response) = post::handle(&database, &request).await {
+                    if let Some(response) = post::handle(&db, &req).await {
                         return Ok(response);
                     }
                 }
@@ -79,8 +79,8 @@ impl Router {
         Ok(Response::builder().status(404).body(Body::empty()).unwrap())
     }
 
-    fn get_url_pattern(&self, request: &Request<Body>) -> impl Iterator<Item = usize> {
-        let path = request.uri().path();
+    fn get_url_pattern(&self, req: &Request<Body>) -> impl Iterator<Item = usize> {
+        let path = req.uri().path();
         self.url_patterns.matches(path).into_iter()
     }
 }
