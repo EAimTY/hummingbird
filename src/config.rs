@@ -1,4 +1,5 @@
 use anyhow::{anyhow, bail, Result};
+use chrono_tz::Tz;
 use getopts::Options;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
@@ -14,19 +15,20 @@ pub struct Config {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct Settings {
+    pub timezone: Tz,
+    pub update_token: Option<String>,
+    pub index_posts_count: usize,
+    pub index_posts_from_old_to_new: bool,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Git {
     pub repository: String,
     pub branch: String,
     pub user: Option<String>,
     pub password: Option<String>,
     pub proxy: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Settings {
-    pub update_token: Option<String>,
-    pub index_posts_count: usize,
-    pub index_posts_from_old_to_new: bool,
 }
 
 #[derive(Debug, Deserialize)]
