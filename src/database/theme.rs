@@ -1,6 +1,5 @@
+use super::{data::List, Data};
 use hyper::{Body, Response};
-
-use super::Data;
 
 #[derive(Debug)]
 pub struct Theme {}
@@ -14,7 +13,15 @@ impl Theme {
         match data {
             Data::Post(post) => Response::new(Body::from(post.content.clone())),
             Data::Page(page) => Response::new(Body::from(page.content.clone())),
-            Data::List(_list) => todo!(),
+            Data::List(list) => match list {
+                List::Index { data } => Response::new(Body::from(
+                    data.into_iter()
+                        .map(|post| format!("{}\n{}\n\n", post.title.clone(), post.content.clone()))
+                        .collect::<String>(),
+                )),
+                _ => todo!(),
+            },
+            _ => todo!(),
         }
     }
 }
