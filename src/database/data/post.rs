@@ -5,6 +5,8 @@ use std::cmp::Ordering;
 pub struct Post {
     pub title: String,
     pub content: String,
+    pub author: String,
+    pub author_email: Option<String>,
     pub create_time: i64,
     pub modify_time: i64,
 }
