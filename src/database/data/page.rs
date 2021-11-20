@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::Config;
 use std::cmp::Ordering;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
