@@ -1,3 +1,5 @@
+use crate::config::Config;
+
 pub use self::{data::Data, pages::Pages, posts::Posts, repo::Repo, theme::Theme, update::Update};
 use anyhow::Result;
 use hyper::{Body, Response};
@@ -63,7 +65,10 @@ impl Database {
         let database = self.data.read().await;
         database
             .posts
-            .get_index(5, false)
+            .get_index(
+                Config::read().settings.index_posts_count,
+                Config::read().settings.index_posts_from_old_to_new,
+            )
             .map(|list| database.theme.render(Data::List(list)))
     }
 }
