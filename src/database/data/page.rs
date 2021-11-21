@@ -5,13 +5,13 @@ use std::cmp::Ordering;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Page {
-    pub url: String,
-    pub title: String,
-    pub content: String,
-    pub author: String,
-    pub author_email: Option<String>,
-    pub create_time: DateTime<Utc>,
-    pub modify_time: DateTime<Utc>,
+    url: String,
+    title: String,
+    content: String,
+    author: String,
+    author_email: Option<String>,
+    create_time: DateTime<Utc>,
+    modify_time: DateTime<Utc>,
 }
 
 impl Page {
@@ -46,6 +46,26 @@ impl Page {
             create_time,
             modify_time,
         }
+    }
+
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+
+    pub fn author(&self) -> &str {
+        &self.author
+    }
+
+    pub fn author_email(&self) -> Option<&str> {
+        self.author_email.as_ref().map(|email| email.as_str())
     }
 }
 

@@ -72,7 +72,7 @@ impl Repo {
         let posts_url_map = posts
             .iter()
             .enumerate()
-            .map(|(idx, post)| (post.url.clone(), idx))
+            .map(|(idx, post)| (post.url().to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
         let pages = pages.into_sorted_vec();
@@ -80,7 +80,7 @@ impl Repo {
         let pages_url_map = pages
             .iter()
             .enumerate()
-            .map(|(idx, page)| (page.url.clone(), idx))
+            .map(|(idx, page)| (page.url().to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
         let theme = Theme::new();
