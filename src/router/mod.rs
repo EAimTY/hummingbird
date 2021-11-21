@@ -55,35 +55,50 @@ impl Router {
 
         for pattern in router.get_url_pattern(&req) {
             match pattern {
-                0 => {
+                UrlPatternKind::Index => {
                     if let Some(response) = index::handle(&db, &req).await {
                         return Ok(response);
                     }
                 }
-                1 => {
+                UrlPatternKind::Update => {
                     if let Some(response) = update::handle(&mut db, &mut req).await {
                         return Ok(response);
                     }
                 }
-                2 => {
+                UrlPatternKind::Page => {
                     if let Some(response) = page::handle(&db, &req).await {
                         return Ok(response);
                     }
                 }
-                3 => {
+                UrlPatternKind::Post => {
                     if let Some(response) = post::handle(&db, &req).await {
                         return Ok(response);
                     }
                 }
-                _ => todo!(),
             }
         }
 
         Ok(Response::builder().status(404).body(Body::empty()).unwrap())
     }
 
-    fn get_url_pattern(&self, req: &Request<Body>) -> impl Iterator<Item = usize> {
+    fn get_url_pattern(&self, req: &Request<Body>) -> impl Iterator<Item = UrlPatternKind> {
         let path = req.uri().path();
-        self.url_patterns.matches(path).into_iter()
+        self.url_patterns
+            .matches(path)
+            .into_iter()
+            .map(|n| match n {
+                0 => UrlPatternKind::Index,
+                1 => UrlPatternKind::Update,
+                2 => UrlPatternKind::Page,
+                3 => UrlPatternKind::Post,
+                _ => unreachable!(),
+            })
     }
+}
+
+enum UrlPatternKind {
+    Index,
+    Update,
+    Page,
+    Post,
 }
