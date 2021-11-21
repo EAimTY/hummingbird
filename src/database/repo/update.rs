@@ -19,8 +19,7 @@ impl Repo {
         let mut posts = BinaryHeap::new();
         let mut pages = BinaryHeap::new();
 
-        let post_url_regex_args =
-            Regex::new("(\\{slug\\}|\\{year\\}|\\{month\\}|\\{day\\})").unwrap();
+        let post_url_regex_args = Regex::new("(\\{slug\\}|\\{year\\}|\\{month\\})").unwrap();
         let page_url_regex_args = Regex::new("(\\{slug\\})").unwrap();
 
         for (path, info) in self.get_file_info()?.into_iter() {

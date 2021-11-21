@@ -37,11 +37,6 @@ impl Post {
             .month()
             .to_string();
 
-        let day = create_time
-            .with_timezone(&Config::read().settings.timezone)
-            .day()
-            .to_string();
-
         let url = url_regex_args
             .replace_all(
                 &Config::read().url_patterns.post_url,
@@ -49,7 +44,6 @@ impl Post {
                     "{slug}" => &title,
                     "{year}" => &year,
                     "{month}" => &month,
-                    "{day}" => &day,
                     _ => unreachable!(),
                 },
             )

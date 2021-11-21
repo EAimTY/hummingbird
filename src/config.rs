@@ -37,6 +37,7 @@ pub struct UrlPatterns {
     pub update_url: String,
     pub page_url: String,
     pub post_url: String,
+    pub author_url: String,
 }
 
 impl Config {
