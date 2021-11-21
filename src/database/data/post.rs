@@ -1,5 +1,6 @@
 use crate::Config;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
+use regex::{Captures, Regex};
 use std::cmp::Ordering;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -21,12 +22,38 @@ impl Post {
         author_email: Option<String>,
         create_time: i64,
         modify_time: i64,
+        url_regex_args: &Regex,
     ) -> Self {
         let create_time = DateTime::from_utc(NaiveDateTime::from_timestamp(create_time, 0), Utc);
         let modify_time = DateTime::from_utc(NaiveDateTime::from_timestamp(modify_time, 0), Utc);
 
-        let url_pattern = &Config::read().url_patterns.post_url;
-        let url = url_pattern.replace("{slug}", &title);
+        let year = create_time
+            .with_timezone(&Config::read().settings.timezone)
+            .year()
+            .to_string();
+
+        let month = create_time
+            .with_timezone(&Config::read().settings.timezone)
+            .month()
+            .to_string();
+
+        let day = create_time
+            .with_timezone(&Config::read().settings.timezone)
+            .day()
+            .to_string();
+
+        let url = url_regex_args
+            .replace_all(
+                &Config::read().url_patterns.post_url,
+                |cap: &Captures| match &cap[0] {
+                    "{slug}" => &title,
+                    "{year}" => &year,
+                    "{month}" => &month,
+                    "{day}" => &day,
+                    _ => unreachable!(),
+                },
+            )
+            .into_owned();
 
         Self {
             url,

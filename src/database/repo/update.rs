@@ -5,6 +5,7 @@ use crate::{
 };
 use anyhow::Result;
 use git2::{DiffFindOptions, ResetType};
+use regex::Regex;
 use std::{
     collections::{BinaryHeap, HashMap},
     ffi::OsStr,
@@ -17,6 +18,10 @@ impl Repo {
 
         let mut posts = BinaryHeap::new();
         let mut pages = BinaryHeap::new();
+
+        let post_url_regex_args =
+            Regex::new("(\\{slug\\}|\\{year\\}|\\{month\\}|\\{day\\})").unwrap();
+        let page_url_regex_args = Regex::new("(\\{slug\\})").unwrap();
 
         for (path, info) in self.get_file_info()?.into_iter() {
             if path.starts_with("posts/") {
@@ -36,6 +41,7 @@ impl Repo {
                     author_email,
                     info.create_time.unwrap(),
                     info.modify_time,
+                    &post_url_regex_args,
                 );
                 posts.push(post);
             } else if path.starts_with("pages/") {
@@ -55,6 +61,7 @@ impl Repo {
                     author_email,
                     info.create_time.unwrap(),
                     info.modify_time,
+                    &page_url_regex_args,
                 );
                 pages.push(page);
             }
