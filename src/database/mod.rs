@@ -7,11 +7,12 @@ use tokio::sync::RwLock;
 pub use self::{authors::Authors, pages::Pages, posts::Posts, repo::Repo, theme::Theme};
 
 mod authors;
-pub mod data;
 mod pages;
 mod posts;
 mod repo;
 mod theme;
+
+pub mod data;
 
 struct DatabaseData<'data> {
     repo: Repo,
@@ -21,8 +22,26 @@ struct DatabaseData<'data> {
     authors: Option<Authors<'data>>,
 }
 
-impl DatabaseData<'_> {
-    pub async fn update_content(&mut self) -> Result<()> {
+impl<'data> DatabaseData<'data> {
+    pub async fn init() -> Result<DatabaseData<'data>> {
+        let mut repo = Repo::init()?;
+
+        let Update {
+            theme,
+            pages,
+            posts,
+        } = repo.get_update().await?;
+
+        Ok(Self {
+            repo,
+            theme,
+            posts,
+            pages,
+            authors: None,
+        })
+    }
+
+    pub async fn update(&mut self) -> Result<()> {
         let Update {
             theme,
             posts,
@@ -35,10 +54,6 @@ impl DatabaseData<'_> {
 
         Ok(())
     }
-
-    pub async fn update_maps(&mut self) -> Result<()> {
-        Ok(())
-    }
 }
 
 #[derive(Clone)]
@@ -48,33 +63,14 @@ pub struct Database {
 
 impl Database {
     pub async fn init() -> Result<Self> {
-        let mut repo = Repo::init()?;
-
-        let Update {
-            theme,
-            pages,
-            posts,
-        } = repo.get_update().await?;
-
-        let mut data = DatabaseData {
-            repo,
-            theme,
-            posts,
-            pages,
-            authors: None,
-        };
-        data.update_maps().await?;
-
         Ok(Self {
-            data: Arc::new(RwLock::new(data)),
+            data: Arc::new(RwLock::new(DatabaseData::init().await?)),
         })
     }
 
     pub async fn update(&mut self) -> Result<()> {
         let mut db = self.data.write().await;
-
-        db.update_content().await?;
-        db.update_maps().await?;
+        db.update().await?;
 
         Ok(())
     }
