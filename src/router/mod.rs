@@ -30,12 +30,12 @@ impl Router {
         );
 
         let page_url = format!("^{}$", regex::escape(&Config::read().url_patterns.page_url));
-        let page_args =
-            Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}|\\\\\\{month\\\\\\}").unwrap();
+        let page_args = Regex::new("\\\\\\{slug\\\\\\}").unwrap();
         let page_url = page_args.replace_all(&page_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
 
         let post_url = format!("^{}$", regex::escape(&Config::read().url_patterns.post_url));
-        let post_args = Regex::new("\\\\\\{slug\\\\\\}").unwrap();
+        let post_args =
+            Regex::new("\\\\\\{slug\\\\\\}|\\\\\\{year\\\\\\}|\\\\\\{month\\\\\\}").unwrap();
         let post_url = post_args.replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
 
         let author_url = format!(
