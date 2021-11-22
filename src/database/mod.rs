@@ -1,5 +1,5 @@
 use self::repo::FileInfo;
-use crate::{Config, Data};
+use crate::Config;
 use anyhow::Result;
 use hyper::{Body, Response};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
@@ -82,16 +82,12 @@ impl Database {
 
     pub async fn get_page(&self, path: &str) -> Option<Response<Body>> {
         let db = self.data.read().await;
-        db.pages
-            .get(path)
-            .map(|page| db.theme.render(Data::Page(page)))
+        db.pages.get(path).map(|page| db.theme.render(page))
     }
 
     pub async fn get_post(&self, path: &str) -> Option<Response<Body>> {
         let db = self.data.read().await;
-        db.posts
-            .get(path)
-            .map(|post| db.theme.render(Data::Post(post)))
+        db.posts.get(path).map(|post| db.theme.render(post))
     }
 
     pub async fn get_index(&self) -> Option<Response<Body>> {
@@ -101,14 +97,14 @@ impl Database {
                 Config::read().settings.index_posts_count,
                 Config::read().settings.index_posts_from_old_to_new,
             )
-            .map(|list| db.theme.render(Data::List(list)))
+            .map(|index| db.theme.render(index))
     }
 
     pub async fn get_author(&self, path: &str) -> Option<Response<Body>> {
         let db = self.data.read().await;
         db.posts
             .get_author(path)
-            .map(|list| db.theme.render(Data::List(list)))
+            .map(|author| db.theme.render(author))
     }
 }
 

@@ -1,8 +1,4 @@
-use crate::{
-    data::{List, Post},
-    database::FileInfo,
-    Config,
-};
+use crate::{data::Post, database::FileInfo, Config, Data};
 use anyhow::Result;
 use regex::Regex;
 use std::{
@@ -86,11 +82,11 @@ impl Posts {
         })
     }
 
-    pub fn get(&self, path: &str) -> Option<&Post> {
-        self.url_map.get(path).map(|id| &self.data[*id])
+    pub fn get(&self, path: &str) -> Option<Data> {
+        self.url_map.get(path).map(|id| Data::Post(&self.data[*id]))
     }
 
-    pub fn get_index(&self, count: usize, from_old_to_new: bool) -> Option<List> {
+    pub fn get_index(&self, count: usize, from_old_to_new: bool) -> Option<Data> {
         if self.data.is_empty() {
             return None;
         }
@@ -101,16 +97,16 @@ impl Posts {
             self.data.iter().rev().take(count).collect()
         };
 
-        Some(List::Index { data })
+        Some(Data::Index { data })
     }
 
-    pub fn get_author(&self, path: &str) -> Option<List> {
+    pub fn get_author(&self, path: &str) -> Option<Data> {
         if self.author_map.is_empty() {
             return None;
         }
         self.author_map.get(path).map(|(author, posts)| {
             let data = posts.iter().map(|id| &self.data[*id]).collect();
-            List::Author {
+            Data::Author {
                 data,
                 author: author.to_owned(),
             }
