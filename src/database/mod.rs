@@ -1,5 +1,5 @@
 use self::repo::FileInfo;
-use crate::Config;
+use crate::{Config, Data};
 use anyhow::Result;
 use hyper::{Body, Response};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
@@ -105,6 +105,11 @@ impl Database {
         db.posts
             .get_author(path)
             .map(|author| db.theme.render(author))
+    }
+
+    pub async fn not_found(&self) -> Response<Body> {
+        let db = self.data.read().await;
+        db.theme.render(Data::NotFound)
     }
 }
 

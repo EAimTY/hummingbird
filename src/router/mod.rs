@@ -6,6 +6,7 @@ use std::convert::Infallible;
 
 mod author;
 mod index;
+mod not_found;
 mod page;
 mod post;
 mod update;
@@ -92,7 +93,7 @@ impl Router {
             }
         }
 
-        Ok(Response::builder().status(404).body(Body::empty()).unwrap())
+        Ok(not_found::handle(&db, &req).await)
     }
 
     fn get_url_pattern(&self, req: &Request<Body>) -> impl Iterator<Item = UrlPatternKind> {
