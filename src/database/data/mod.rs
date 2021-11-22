@@ -17,6 +17,7 @@ pub enum Data<'data> {
         data: Vec<&'data Post>,
         time: Time,
     },
+    NotFound,
     // ...
 }
 

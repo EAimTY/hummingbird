@@ -38,6 +38,7 @@ impl Theme {
                 Response::new(Body::from(format!("{}\n\n{}", author, list)))
             }
             Data::Time { data, time } => todo!(),
+            Data::NotFound => Response::builder().status(404).body(Body::from("not found")).unwrap(),
         }
     }
 }
