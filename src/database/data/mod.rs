@@ -15,18 +15,18 @@ pub enum Data<'data> {
         data: Vec<&'data Post>,
         author: String,
     },
-    Time {
+    Archive {
         data: Vec<&'data Post>,
-        time: Time,
+        range: DateRange,
     },
     Update(UpdateResult),
     NotFound,
-    // ...
 }
 
-pub enum Time {
+#[derive(Debug)]
+pub enum DateRange {
     Year(i32),
-    Month(u32),
+    Month(i32, u32),
 }
 
 pub enum UpdateResult {

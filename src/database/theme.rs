@@ -46,7 +46,7 @@ impl Theme {
                     .collect::<String>();
                 Response::new(Body::from(format!("{}\n\n{}", author, list)))
             }
-            Data::Time { data, time } => todo!(),
+            Data::Archive { data, range } => todo!(),
             Data::NotFound => Response::builder()
                 .status(404)
                 .body(Body::from("not found"))

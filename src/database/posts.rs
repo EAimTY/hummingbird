@@ -1,9 +1,14 @@
-use crate::{data::Post, database::FileInfo, Config, Data};
+use crate::{
+    data::{DateRange, Post},
+    database::FileInfo,
+    Config, Data,
+};
 use anyhow::Result;
 use regex::Regex;
 use std::{
     collections::{BinaryHeap, HashMap},
     ffi::OsStr,
+    ops::Range,
     path::{Path, PathBuf},
 };
 use tokio::fs;
@@ -13,6 +18,7 @@ pub struct Posts {
     data: Vec<Post>,
     url_map: HashMap<String, usize>,
     author_map: HashMap<String, (String, Vec<usize>)>,
+    archive_map: HashMap<String, (DateRange, Range<usize>)>,
 }
 
 impl Posts {
@@ -75,10 +81,13 @@ impl Posts {
             })
             .collect();
 
+        let archive_map = HashMap::new();
+
         Ok(Self {
             data,
             url_map,
             author_map,
+            archive_map,
         })
     }
 
