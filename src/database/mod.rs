@@ -4,9 +4,8 @@ use hyper::{Body, Response};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-pub use self::{authors::Authors, pages::Pages, posts::Posts, repo::Repo, theme::Theme};
+pub use self::{pages::Pages, posts::Posts, repo::Repo, theme::Theme};
 
-mod authors;
 mod pages;
 mod posts;
 mod repo;
@@ -14,16 +13,15 @@ mod theme;
 
 pub mod data;
 
-struct DatabaseData<'data> {
+struct DatabaseData {
     repo: Repo,
     theme: Theme,
     posts: Posts,
     pages: Pages,
-    authors: Option<Authors<'data>>,
 }
 
-impl<'data> DatabaseData<'data> {
-    pub async fn init() -> Result<DatabaseData<'data>> {
+impl DatabaseData {
+    pub async fn init() -> Result<DatabaseData> {
         let mut repo = Repo::init()?;
 
         let Update {
@@ -37,7 +35,6 @@ impl<'data> DatabaseData<'data> {
             theme,
             posts,
             pages,
-            authors: None,
         })
     }
 
@@ -58,7 +55,7 @@ impl<'data> DatabaseData<'data> {
 
 #[derive(Clone)]
 pub struct Database {
-    data: Arc<RwLock<DatabaseData<'static>>>,
+    data: Arc<RwLock<DatabaseData>>,
 }
 
 impl Database {
