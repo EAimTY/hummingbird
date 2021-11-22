@@ -1,4 +1,4 @@
-use crate::{data::Page, database::FileInfo};
+use crate::{data::Page, database::FileInfo, Data};
 use anyhow::Result;
 use regex::Regex;
 use std::{
@@ -53,7 +53,7 @@ impl Pages {
         Ok(Self { data, url_map })
     }
 
-    pub fn get(&self, path: &str) -> Option<&Page> {
-        self.url_map.get(path).map(|id| &self.data[*id])
+    pub fn get(&self, path: &str) -> Option<Data> {
+        self.url_map.get(path).map(|id| Data::Page(&self.data[*id]))
     }
 }
