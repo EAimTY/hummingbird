@@ -3,11 +3,13 @@ use anyhow::Result;
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
 use tempfile::TempDir;
 
+pub use self::update::FileInfo;
+
 mod update;
 
 pub struct Repo {
-    repo: Repository,
-    tempdir: TempDir,
+    pub repo: Repository,
+    pub tempdir: TempDir,
 }
 
 impl Repo {
