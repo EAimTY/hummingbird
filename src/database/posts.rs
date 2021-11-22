@@ -16,7 +16,7 @@ use tokio::fs;
 pub struct Posts {
     data: Vec<Post>,
     url_map: HashMap<String, usize>,
-    author_map: HashMap<String, Vec<usize>>,
+    author_map: HashMap<String, (String, Vec<usize>)>,
 }
 
 impl Posts {
@@ -74,7 +74,7 @@ impl Posts {
                         .url_patterns
                         .author_url
                         .replace("{author}", &author),
-                    posts,
+                    (author, posts),
                 )
             })
             .collect();
@@ -102,5 +102,18 @@ impl Posts {
         };
 
         Some(List::Index { data })
+    }
+
+    pub fn get_author(&self, path: &str) -> Option<List> {
+        if self.author_map.is_empty() {
+            return None;
+        }
+        self.author_map.get(path).map(|(author, posts)| {
+            let data = posts.iter().map(|id| &self.data[*id]).collect();
+            List::Author {
+                data,
+                author: author.to_owned(),
+            }
+        })
     }
 }

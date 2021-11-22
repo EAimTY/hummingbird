@@ -103,6 +103,13 @@ impl Database {
             )
             .map(|list| db.theme.render(Data::List(list)))
     }
+
+    pub async fn get_author(&self, path: &str) -> Option<Response<Body>> {
+        let db = self.data.read().await;
+        db.posts
+            .get_author(path)
+            .map(|list| db.theme.render(Data::List(list)))
+    }
 }
 
 #[derive(Debug)]
