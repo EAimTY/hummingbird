@@ -1,7 +1,8 @@
+use self::repo::FileInfo;
 use crate::{Config, Data};
 use anyhow::Result;
 use hyper::{Body, Response};
-use std::sync::Arc;
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 
 pub use self::{pages::Pages, posts::Posts, repo::Repo, theme::Theme};
@@ -26,9 +27,12 @@ impl DatabaseData {
 
         let Update {
             theme,
-            pages,
-            posts,
+            page_files_info_map,
+            post_files_info_map,
         } = repo.get_update().await?;
+
+        let pages = Pages::from_file_info(page_files_info_map, repo.tempdir.path()).await?;
+        let posts = Posts::from_file_info(post_files_info_map, repo.tempdir.path()).await?;
 
         Ok(Self {
             repo,
@@ -41,13 +45,13 @@ impl DatabaseData {
     pub async fn update(&mut self) -> Result<()> {
         let Update {
             theme,
-            posts,
-            pages,
+            page_files_info_map,
+            post_files_info_map,
         } = self.repo.get_update().await?;
 
         self.theme = theme;
-        self.posts = posts;
-        self.pages = pages;
+        self.pages = Pages::from_file_info(page_files_info_map, self.repo.tempdir.path()).await?;
+        self.posts = Posts::from_file_info(post_files_info_map, self.repo.tempdir.path()).await?;
 
         Ok(())
     }
@@ -100,6 +104,6 @@ impl Database {
 #[derive(Debug)]
 pub struct Update {
     pub theme: Theme,
-    pub posts: Posts,
-    pub pages: Pages,
+    pub page_files_info_map: HashMap<PathBuf, FileInfo>,
+    pub post_files_info_map: HashMap<PathBuf, FileInfo>,
 }
