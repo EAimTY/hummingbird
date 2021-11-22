@@ -64,8 +64,12 @@ pub struct Database {
 
 impl Database {
     pub async fn init() -> Result<Self> {
+        println!("Initializing database...");
+        let data = DatabaseData::init().await?;
+        println!("Database Initialization finished.");
+
         Ok(Self {
-            data: Arc::new(RwLock::new(DatabaseData::init().await?)),
+            data: Arc::new(RwLock::new(data)),
         })
     }
 

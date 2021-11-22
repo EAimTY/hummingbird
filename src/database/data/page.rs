@@ -29,7 +29,7 @@ impl Page {
 
         let url = url_regex_args
             .replace_all(
-                &Config::read().url_patterns.post_url,
+                &Config::read().url_patterns.page_url,
                 |cap: &Captures| match &cap[0] {
                     "{slug}" => &title,
                     _ => unreachable!(),
