@@ -5,11 +5,13 @@ use std::collections::HashMap;
 pub struct Posts {
     data: Vec<Post>,
     url_map: HashMap<String, usize>,
+    author_map: HashMap<String, Vec<usize>>,
 }
 
 impl Posts {
     pub fn new(data: Vec<Post>, url_map: HashMap<String, usize>) -> Self {
-        Self { data, url_map }
+        let author_map = HashMap::new();
+        Self { data, url_map, author_map }
     }
 
     pub fn get(&self, path: &str) -> Option<&Post> {
