@@ -71,30 +71,29 @@ impl Repo {
                     (true, true) if delta.old_file().path() == delta.new_file().path() => {
                         let path = delta.new_file().path().unwrap().to_path_buf();
 
-                        match status_map.entry(path.clone()).or_insert_with(|| {
-                            if path.starts_with(PathBuf::from("pages/")) {
-                                FileStatus::Created(ContentType::Page)
-                            } else if path.starts_with(PathBuf::from("posts/")) {
-                                FileStatus::Created(ContentType::Post)
-                            } else {
-                                FileStatus::Deleted
-                            }
-                        }) {
-                            FileStatus::Created(content_type) => {
-                                let entry = if let ContentType::Page = content_type {
-                                    page_files_info_map.entry(path)
+                        if let FileStatus::Created(content_type) =
+                            status_map.entry(path.clone()).or_insert_with(|| {
+                                if path.starts_with(PathBuf::from("pages/")) {
+                                    FileStatus::Created(ContentType::Page)
+                                } else if path.starts_with(PathBuf::from("posts/")) {
+                                    FileStatus::Created(ContentType::Post)
                                 } else {
-                                    post_files_info_map.entry(path)
-                                };
+                                    FileStatus::Deleted
+                                }
+                            })
+                        {
+                            let entry = if let ContentType::Page = content_type {
+                                page_files_info_map.entry(path)
+                            } else {
+                                post_files_info_map.entry(path)
+                            };
 
-                                entry.or_insert_with(|| {
-                                    FileInfo::new(
-                                        commit.time().seconds()
-                                            + commit.time().offset_minutes() as i64 * 60,
-                                    )
-                                });
-                            }
-                            _ => {}
+                            entry.or_insert_with(|| {
+                                FileInfo::new(
+                                    commit.time().seconds()
+                                        + commit.time().offset_minutes() as i64 * 60,
+                                )
+                            });
                         }
                     }
 

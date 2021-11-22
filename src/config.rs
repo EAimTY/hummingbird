@@ -57,13 +57,8 @@ pub struct ConfigBuilder<'cfg> {
     program: Option<&'cfg str>,
 }
 
-impl Default for ConfigBuilder<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<'cfg> ConfigBuilder<'cfg> {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mut opts = Options::new();
         opts.optopt("c", "config-file", "config file path", "CONFIG");

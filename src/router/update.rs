@@ -1,4 +1,4 @@
-use crate::{Config, Database};
+use crate::{data::UpdateResult, Config, Data, Database};
 use hyper::{
     body::{self, Buf},
     Body, Method, Request, Response,
@@ -16,7 +16,13 @@ pub async fn handle(db: &mut Database, req: &mut Request<Body>) -> Option<Respon
             }
 
             if !update {
-                return Some(Response::builder().status(403).body(Body::empty()).unwrap());
+                let db = db.data.read().await;
+
+                let res = db
+                    .theme
+                    .render(Data::Update(UpdateResult::PermissionDenied));
+
+                return Some(res);
             }
         }
     } else if req.method() == Method::GET {
@@ -24,11 +30,14 @@ pub async fn handle(db: &mut Database, req: &mut Request<Body>) -> Option<Respon
     }
 
     if update {
-        if db.update().await.is_ok() {
-            return Some(Response::new(Body::from("update done")));
-        } else {
-            return Some(Response::new(Body::from("update failed")));
-        }
+        let mut db = db.data.write().await;
+
+        let result = db
+            .update()
+            .await
+            .map_or_else(UpdateResult::Error, |_| UpdateResult::Success);
+        let res = db.theme.render(Data::Update(result));
+        return Some(res);
     }
 
     None
