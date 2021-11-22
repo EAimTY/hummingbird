@@ -1,3 +1,5 @@
+use anyhow::Error;
+
 mod page;
 mod post;
 
@@ -17,6 +19,7 @@ pub enum Data<'data> {
         data: Vec<&'data Post>,
         time: Time,
     },
+    Update(UpdateResult),
     NotFound,
     // ...
 }
@@ -24,4 +27,10 @@ pub enum Data<'data> {
 pub enum Time {
     Year(i32),
     Month(u32),
+}
+
+pub enum UpdateResult {
+    Success,
+    PermissionDenied,
+    Error(Error),
 }

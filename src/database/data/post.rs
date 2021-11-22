@@ -77,7 +77,7 @@ impl Post {
     }
 
     pub fn author_email(&self) -> Option<&str> {
-        self.author_email.as_ref().map(|email| email.as_str())
+        self.author_email.as_deref()
     }
 }
 

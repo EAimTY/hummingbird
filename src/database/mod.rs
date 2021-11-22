@@ -1,7 +1,5 @@
 use self::repo::FileInfo;
-use crate::{Config, Data};
 use anyhow::Result;
-use hyper::{Body, Response};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 
@@ -14,11 +12,11 @@ mod theme;
 
 pub mod data;
 
-struct DatabaseData {
-    repo: Repo,
-    theme: Theme,
-    posts: Posts,
-    pages: Pages,
+pub struct DatabaseData {
+    pub repo: Repo,
+    pub theme: Theme,
+    pub posts: Posts,
+    pub pages: Pages,
 }
 
 impl DatabaseData {
@@ -59,7 +57,7 @@ impl DatabaseData {
 
 #[derive(Clone)]
 pub struct Database {
-    data: Arc<RwLock<DatabaseData>>,
+    pub data: Arc<RwLock<DatabaseData>>,
 }
 
 impl Database {
@@ -71,45 +69,6 @@ impl Database {
         Ok(Self {
             data: Arc::new(RwLock::new(data)),
         })
-    }
-
-    pub async fn update(&mut self) -> Result<()> {
-        let mut db = self.data.write().await;
-        db.update().await?;
-
-        Ok(())
-    }
-
-    pub async fn get_page(&self, path: &str) -> Option<Response<Body>> {
-        let db = self.data.read().await;
-        db.pages.get(path).map(|page| db.theme.render(page))
-    }
-
-    pub async fn get_post(&self, path: &str) -> Option<Response<Body>> {
-        let db = self.data.read().await;
-        db.posts.get(path).map(|post| db.theme.render(post))
-    }
-
-    pub async fn get_index(&self) -> Option<Response<Body>> {
-        let db = self.data.read().await;
-        db.posts
-            .get_index(
-                Config::read().settings.index_posts_count,
-                Config::read().settings.index_posts_from_old_to_new,
-            )
-            .map(|index| db.theme.render(index))
-    }
-
-    pub async fn get_author(&self, path: &str) -> Option<Response<Body>> {
-        let db = self.data.read().await;
-        db.posts
-            .get_author(path)
-            .map(|author| db.theme.render(author))
-    }
-
-    pub async fn not_found(&self) -> Response<Body> {
-        let db = self.data.read().await;
-        db.theme.render(Data::NotFound)
     }
 }
 

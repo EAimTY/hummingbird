@@ -86,15 +86,22 @@ impl Posts {
         self.url_map.get(path).map(|id| Data::Post(&self.data[*id]))
     }
 
-    pub fn get_index(&self, count: usize, from_old_to_new: bool) -> Option<Data> {
+    pub fn get_index(&self) -> Option<Data> {
         if self.data.is_empty() {
             return None;
         }
 
-        let data = if from_old_to_new {
-            self.data.iter().take(count).collect()
+        let data = if Config::read().settings.index_posts_from_old_to_new {
+            self.data
+                .iter()
+                .take(Config::read().settings.index_posts_count)
+                .collect()
         } else {
-            self.data.iter().rev().take(count).collect()
+            self.data
+                .iter()
+                .rev()
+                .take(Config::read().settings.index_posts_count)
+                .collect()
         };
 
         Some(Data::Index { data })

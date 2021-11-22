@@ -3,8 +3,16 @@ use hyper::{Body, Method, Request, Response};
 
 pub async fn handle(db: &Database, req: &Request<Body>) -> Option<Response<Body>> {
     if req.method() == Method::GET {
+        let db = db.data.read().await;
+
         let path = req.uri().path();
-        return db.get_author(path).await;
+
+        let res = db
+            .posts
+            .get_author(path)
+            .map(|author| db.theme.render(author));
+
+        return res;
     }
     None
 }
