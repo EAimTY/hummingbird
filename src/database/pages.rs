@@ -21,7 +21,7 @@ impl Pages {
         tempdir: &Path,
     ) -> Result<Self> {
         let mut data = BinaryHeap::new();
-        let page_url_regex_args = Regex::new("(\\{slug\\})").unwrap();
+        let page_url_regex_args = Regex::new(r"(\{slug\})").unwrap();
 
         for (path, info) in file_info.into_iter() {
             if path.extension() == Some(OsStr::new("md")) {
