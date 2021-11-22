@@ -1,6 +1,7 @@
 use crate::{
     data::{List, Post},
     database::FileInfo,
+    Config,
 };
 use anyhow::Result;
 use regex::Regex;
@@ -54,7 +55,29 @@ impl Posts {
             .map(|(idx, post)| (post.url().to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
-        let author_map = HashMap::new();
+        let author_map =
+            data.iter()
+                .enumerate()
+                .fold(HashMap::new(), |mut author_map, (idx, post)| {
+                    let posts = author_map
+                        .entry(post.author().to_owned())
+                        .or_insert_with(Vec::new);
+                    posts.push(idx);
+                    author_map
+                });
+
+        let author_map = author_map
+            .into_iter()
+            .map(|(author, posts)| {
+                (
+                    Config::read()
+                        .url_patterns
+                        .author_url
+                        .replace("{author}", &author),
+                    posts,
+                )
+            })
+            .collect();
 
         Ok(Self {
             data,

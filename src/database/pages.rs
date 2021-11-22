@@ -12,7 +12,6 @@ use tokio::fs;
 pub struct Pages {
     data: Vec<Page>,
     url_map: HashMap<String, usize>,
-    author_map: HashMap<String, Vec<usize>>,
 }
 
 impl Pages {
@@ -51,13 +50,7 @@ impl Pages {
             .map(|(idx, page)| (page.url().to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
-        let author_map = HashMap::new();
-
-        Ok(Self {
-            data,
-            url_map,
-            author_map,
-        })
+        Ok(Self { data, url_map })
     }
 
     pub fn get(&self, path: &str) -> Option<&Page> {
