@@ -1,7 +1,5 @@
-use crate::{
-    database::{repo, Repo, Theme, Update},
-    Config,
-};
+use super::super::{git, Repo, Theme, Update};
+use crate::Config;
 use anyhow::Result;
 use git2::{DiffFindOptions, ResetType};
 use std::{collections::HashMap, path::PathBuf};
@@ -24,7 +22,7 @@ impl Repo {
 
         origin_remote.fetch(
             &[&Config::read().git.branch],
-            Some(&mut repo::get_fetch_options()),
+            Some(&mut git::get_fetch_options()),
             None,
         )?;
         let oid = self.repo.refname_to_id(&format!(
@@ -40,7 +38,7 @@ impl Repo {
 
     fn get_page_and_post_files_info(
         &self,
-    ) -> Result<(HashMap<PathBuf, FileInfo>, HashMap<PathBuf, FileInfo>)> {
+    ) -> Result<(HashMap<PathBuf, GitFileInfo>, HashMap<PathBuf, GitFileInfo>)> {
         let mut page_files_info_map = HashMap::new();
         let mut post_files_info_map = HashMap::new();
 
@@ -89,7 +87,7 @@ impl Repo {
                             };
 
                             entry.or_insert_with(|| {
-                                FileInfo::new(
+                                GitFileInfo::new(
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 )
@@ -118,7 +116,7 @@ impl Repo {
                                 };
 
                                 let info = entry.or_insert_with(|| {
-                                    FileInfo::new(
+                                    GitFileInfo::new(
                                         commit.time().seconds()
                                             + commit.time().offset_minutes() as i64 * 60,
                                     )
@@ -173,7 +171,7 @@ impl Repo {
                                 };
 
                                 entry.or_insert_with(|| {
-                                    FileInfo::new(
+                                    GitFileInfo::new(
                                         commit.time().seconds()
                                             + commit.time().offset_minutes() as i64 * 60,
                                     )
@@ -208,14 +206,14 @@ impl Repo {
 }
 
 #[derive(Debug, Clone)]
-pub struct FileInfo {
+pub struct GitFileInfo {
     pub author_name: Option<String>,
     pub author_email: Option<String>,
     pub create_time: Option<i64>,
     pub modify_time: i64,
 }
 
-impl FileInfo {
+impl GitFileInfo {
     fn new(modify_time: i64) -> Self {
         Self {
             author_name: None,

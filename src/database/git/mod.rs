@@ -3,7 +3,7 @@ use anyhow::Result;
 use git2::{build::RepoBuilder, Cred, FetchOptions, ProxyOptions, RemoteCallbacks, Repository};
 use tempfile::TempDir;
 
-pub use self::update::FileInfo;
+pub use self::update::GitFileInfo;
 
 mod update;
 
