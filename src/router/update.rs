@@ -1,6 +1,6 @@
 use crate::{
     database::{data_type::UpdateResult, DataType},
-    Config, Database,
+    Config, DatabaseManager,
 };
 use hyper::{
     body::{self, Buf},
@@ -19,7 +19,7 @@ pub async fn handle(req: &mut Request<Body>) -> Option<Response<Body>> {
             }
 
             if !update {
-                let db = Database::read().await;
+                let db = DatabaseManager::read().await;
 
                 let res = db
                     .theme
@@ -33,7 +33,7 @@ pub async fn handle(req: &mut Request<Body>) -> Option<Response<Body>> {
     }
 
     if update {
-        let mut db = Database::write().await;
+        let mut db = DatabaseManager::write().await;
 
         let result = db
             .update()

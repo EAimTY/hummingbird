@@ -1,9 +1,9 @@
-use crate::Database;
+use crate::DatabaseManager;
 use hyper::{Body, Method, Request, Response};
 
 pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
     if req.method() == Method::GET {
-        let db = Database::read().await;
+        let db = DatabaseManager::read().await;
         let path = req.uri().path();
 
         let res = db

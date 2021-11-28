@@ -19,17 +19,17 @@ mod theme;
 
 pub mod data_type;
 
-static DATABASE: OnceCell<Arc<RwLock<DatabaseData>>> = OnceCell::new();
+static DATABASE: OnceCell<Arc<RwLock<Database>>> = OnceCell::new();
 
-pub struct DatabaseData {
+pub struct Database {
     pub repo: Repo,
     pub theme: Theme,
     pub posts: Posts,
     pub pages: Pages,
 }
 
-impl DatabaseData {
-    pub async fn init() -> Result<DatabaseData> {
+impl Database {
+    pub async fn init() -> Result<Database> {
         let mut repo = Repo::init()?;
 
         let Update {
@@ -65,13 +65,13 @@ impl DatabaseData {
 }
 
 #[derive(Clone)]
-pub struct Database;
+pub struct DatabaseManager;
 
-impl Database {
+impl DatabaseManager {
     pub async fn init() -> Result<()> {
         println!("Initializing database...");
 
-        let data = DatabaseData::init().await?;
+        let data = Database::init().await?;
         DATABASE
             .set(Arc::new(RwLock::new(data)))
             .map_err(|_| anyhow!("Failed to initialize database"))?;
@@ -81,12 +81,12 @@ impl Database {
         Ok(())
     }
 
-    pub async fn read() -> RwLockReadGuard<'static, DatabaseData> {
+    pub async fn read() -> RwLockReadGuard<'static, Database> {
         let db_lock = DATABASE.get().unwrap();
         db_lock.read().await
     }
 
-    pub async fn write() -> RwLockWriteGuard<'static, DatabaseData> {
+    pub async fn write() -> RwLockWriteGuard<'static, Database> {
         let db_lock = DATABASE.get().unwrap();
         db_lock.write().await
     }
