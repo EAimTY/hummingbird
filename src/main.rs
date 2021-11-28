@@ -2,7 +2,7 @@ use std::env;
 
 pub use crate::{
     config::{Config, ConfigBuilder},
-    database::Database,
+    database::DatabaseManager,
     router::Router,
 };
 
@@ -25,7 +25,7 @@ async fn main() {
         }
     }
 
-    match Database::init().await {
+    match DatabaseManager::init().await {
         Ok(_) => {}
         Err(err) => {
             eprintln!("{}", err);
