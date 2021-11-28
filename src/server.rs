@@ -1,4 +1,4 @@
-use crate::{Database, Router};
+use crate::Router;
 use anyhow::Result;
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -6,13 +6,11 @@ use hyper::{
 };
 use std::{convert::Infallible, net::SocketAddr};
 
-pub async fn start(db: Database) -> Result<()> {
+pub async fn start() -> Result<()> {
     Router::init();
 
     let service = make_service_fn(move |_| {
-        let db = db.clone();
-
-        let service = service_fn(move |req| Router::route(db.clone(), req));
+        let service = service_fn(move |req| Router::route(req));
         async move { Ok::<_, Infallible>(service) }
     });
 

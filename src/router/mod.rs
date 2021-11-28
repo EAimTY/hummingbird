@@ -1,4 +1,4 @@
-use crate::{Config, Database};
+use crate::Config;
 use hyper::{Body, Request, Response};
 use once_cell::sync::OnceCell;
 use regex::{Regex, RegexSet};
@@ -57,43 +57,40 @@ impl Router {
         ROUTER.set(Self { url_patterns }).unwrap();
     }
 
-    pub async fn route(
-        mut db: Database,
-        mut req: Request<Body>,
-    ) -> Result<Response<Body>, Infallible> {
+    pub async fn route(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
         let router = ROUTER.get().unwrap();
 
         for pattern in router.get_url_pattern(&req) {
             match pattern {
                 UrlPatternKind::Index => {
-                    if let Some(res) = index::handle(&db, &req).await {
+                    if let Some(res) = index::handle(&req).await {
                         return Ok(res);
                     }
                 }
                 UrlPatternKind::Update => {
-                    if let Some(res) = update::handle(&mut db, &mut req).await {
+                    if let Some(res) = update::handle(&mut req).await {
                         return Ok(res);
                     }
                 }
                 UrlPatternKind::Page => {
-                    if let Some(res) = page::handle(&db, &req).await {
+                    if let Some(res) = page::handle(&req).await {
                         return Ok(res);
                     }
                 }
                 UrlPatternKind::Post => {
-                    if let Some(res) = post::handle(&db, &req).await {
+                    if let Some(res) = post::handle(&req).await {
                         return Ok(res);
                     }
                 }
                 UrlPatternKind::Author => {
-                    if let Some(res) = author::handle(&db, &req).await {
+                    if let Some(res) = author::handle(&req).await {
                         return Ok(res);
                     }
                 }
             }
         }
 
-        Ok(not_found::handle(&db, &req).await)
+        Ok(not_found::handle(&req).await)
     }
 
     fn get_url_pattern(&self, req: &Request<Body>) -> impl Iterator<Item = UrlPatternKind> {

@@ -25,15 +25,15 @@ async fn main() {
         }
     }
 
-    let db = match Database::init().await {
-        Ok(db) => db,
+    match Database::init().await {
+        Ok(_) => {}
         Err(err) => {
             eprintln!("{}", err);
             return;
         }
     };
 
-    match server::start(db).await {
+    match server::start().await {
         Ok(_) => {}
         Err(err) => {
             eprintln!("{}", err);
