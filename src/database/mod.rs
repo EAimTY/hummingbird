@@ -1,7 +1,8 @@
 use self::git::GitFileInfo;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
+use once_cell::sync::OnceCell;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub use self::{
     data_type::DataType,
@@ -17,6 +18,8 @@ mod post;
 mod theme;
 
 pub mod data_type;
+
+static DATABASE: OnceCell<Arc<RwLock<DatabaseData>>> = OnceCell::new();
 
 pub struct DatabaseData {
     pub repo: Repo,
@@ -62,19 +65,30 @@ impl DatabaseData {
 }
 
 #[derive(Clone)]
-pub struct Database {
-    pub data: Arc<RwLock<DatabaseData>>,
-}
+pub struct Database;
 
 impl Database {
-    pub async fn init() -> Result<Self> {
+    pub async fn init() -> Result<()> {
         println!("Initializing database...");
+
         let data = DatabaseData::init().await?;
+        DATABASE
+            .set(Arc::new(RwLock::new(data)))
+            .map_err(|_| anyhow!("Failed to initialize database"))?;
+
         println!("Database Initialization finished.");
 
-        Ok(Self {
-            data: Arc::new(RwLock::new(data)),
-        })
+        Ok(())
+    }
+
+    pub async fn read() -> RwLockReadGuard<'static, DatabaseData> {
+        let db_lock = DATABASE.get().unwrap();
+        db_lock.read().await
+    }
+
+    pub async fn write() -> RwLockWriteGuard<'static, DatabaseData> {
+        let db_lock = DATABASE.get().unwrap();
+        db_lock.write().await
     }
 }
 

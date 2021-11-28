@@ -7,7 +7,7 @@ use hyper::{
     Body, Method, Request, Response,
 };
 
-pub async fn handle(db: &mut Database, req: &mut Request<Body>) -> Option<Response<Body>> {
+pub async fn handle(req: &mut Request<Body>) -> Option<Response<Body>> {
     let mut update = false;
 
     if let Some(update_token) = &Config::read().settings.update_token {
@@ -19,7 +19,7 @@ pub async fn handle(db: &mut Database, req: &mut Request<Body>) -> Option<Respon
             }
 
             if !update {
-                let db = db.data.read().await;
+                let db = Database::read().await;
 
                 let res = db
                     .theme
@@ -33,7 +33,7 @@ pub async fn handle(db: &mut Database, req: &mut Request<Body>) -> Option<Respon
     }
 
     if update {
-        let mut db = db.data.write().await;
+        let mut db = Database::write().await;
 
         let result = db
             .update()
