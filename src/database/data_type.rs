@@ -1,11 +1,7 @@
+use crate::database::{Page, Post};
 use anyhow::Error;
 
-mod page;
-mod post;
-
-pub use self::{page::Page, post::Post};
-
-pub enum Data<'data> {
+pub enum DataType<'data> {
     Post(&'data Post),
     Page(&'data Page),
     Index {

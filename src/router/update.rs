@@ -1,4 +1,7 @@
-use crate::{data::UpdateResult, Config, Data, Database};
+use crate::{
+    database::{data_type::UpdateResult, DataType},
+    Config, Database,
+};
 use hyper::{
     body::{self, Buf},
     Body, Method, Request, Response,
@@ -20,7 +23,7 @@ pub async fn handle(db: &mut Database, req: &mut Request<Body>) -> Option<Respon
 
                 let res = db
                     .theme
-                    .render(Data::Update(UpdateResult::PermissionDenied));
+                    .render(DataType::Update(UpdateResult::PermissionDenied));
 
                 return Some(res);
             }
@@ -36,7 +39,7 @@ pub async fn handle(db: &mut Database, req: &mut Request<Body>) -> Option<Respon
             .update()
             .await
             .map_or_else(UpdateResult::Error, |_| UpdateResult::Success);
-        let res = db.theme.render(Data::Update(result));
+        let res = db.theme.render(DataType::Update(result));
         return Some(res);
     }
 

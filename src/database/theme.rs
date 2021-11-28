@@ -1,4 +1,4 @@
-use crate::{data::UpdateResult, Data};
+use super::{data_type::UpdateResult, DataType};
 use hyper::{Body, Response};
 
 #[derive(Debug)]
@@ -10,11 +10,11 @@ impl Theme {
         Theme {}
     }
 
-    pub fn render(&self, data: Data) -> Response<Body> {
+    pub fn render(&self, data: DataType) -> Response<Body> {
         match data {
-            Data::Post(post) => Response::new(Body::from(post.content().to_owned())),
-            Data::Page(page) => Response::new(Body::from(page.content().to_owned())),
-            Data::Update(result) => match result {
+            DataType::Post(post) => Response::new(Body::from(post.content().to_owned())),
+            DataType::Page(page) => Response::new(Body::from(page.content().to_owned())),
+            DataType::Update(result) => match result {
                 UpdateResult::Success => Response::new(Body::from("ok")),
                 UpdateResult::PermissionDenied => Response::builder()
                     .status(403)
@@ -22,7 +22,7 @@ impl Theme {
                     .unwrap(),
                 UpdateResult::Error(error) => Response::new(Body::from(error.to_string())),
             },
-            Data::Index { data } => Response::new(Body::from(
+            DataType::Index { data } => Response::new(Body::from(
                 data.into_iter()
                     .map(|post| {
                         format!(
@@ -33,7 +33,7 @@ impl Theme {
                     })
                     .collect::<String>(),
             )),
-            Data::Author { data, author } => {
+            DataType::Author { data, author } => {
                 let list = data
                     .into_iter()
                     .map(|post| {
@@ -46,8 +46,8 @@ impl Theme {
                     .collect::<String>();
                 Response::new(Body::from(format!("{}\n\n{}", author, list)))
             }
-            Data::Archive { data, range } => todo!(),
-            Data::NotFound => Response::builder()
+            DataType::Archive { data, range } => todo!(),
+            DataType::NotFound => Response::builder()
                 .status(404)
                 .body(Body::from("not found"))
                 .unwrap(),

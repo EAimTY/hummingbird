@@ -2,10 +2,7 @@ use std::env;
 
 pub use crate::{
     config::{Config, ConfigBuilder},
-    database::{
-        data::{self, Data},
-        Database,
-    },
+    database::Database,
     router::Router,
 };
 

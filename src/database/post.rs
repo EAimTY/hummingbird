@@ -1,11 +1,10 @@
-use crate::{
-    data::{DateRange, Post},
-    database::FileInfo,
-    Config, Data,
-};
+use super::{data_type::DateRange, git::GitFileInfo, DataType};
+use crate::Config;
 use anyhow::Result;
-use regex::Regex;
+use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
+use regex::{Captures, Regex};
 use std::{
+    cmp::Ordering,
     collections::{BinaryHeap, HashMap},
     ffi::OsStr,
     ops::Range,
@@ -23,7 +22,7 @@ pub struct Posts {
 
 impl Posts {
     pub async fn from_file_info(
-        file_info: HashMap<PathBuf, FileInfo>,
+        file_info: HashMap<PathBuf, GitFileInfo>,
         tempdir: &Path,
     ) -> Result<Self> {
         let mut data = BinaryHeap::new();
@@ -91,11 +90,13 @@ impl Posts {
         })
     }
 
-    pub fn get(&self, path: &str) -> Option<Data> {
-        self.url_map.get(path).map(|id| Data::Post(&self.data[*id]))
+    pub fn get(&self, path: &str) -> Option<DataType> {
+        self.url_map
+            .get(path)
+            .map(|id| DataType::Post(&self.data[*id]))
     }
 
-    pub fn get_index(&self) -> Option<Data> {
+    pub fn get_index(&self) -> Option<DataType> {
         if self.data.is_empty() {
             return None;
         }
@@ -113,19 +114,112 @@ impl Posts {
                 .collect()
         };
 
-        Some(Data::Index { data })
+        Some(DataType::Index { data })
     }
 
-    pub fn get_author(&self, path: &str) -> Option<Data> {
+    pub fn get_author(&self, path: &str) -> Option<DataType> {
         if self.author_map.is_empty() {
             return None;
         }
         self.author_map.get(path).map(|(author, posts)| {
             let data = posts.iter().map(|id| &self.data[*id]).collect();
-            Data::Author {
+            DataType::Author {
                 data,
                 author: author.to_owned(),
             }
         })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Post {
+    url: String,
+    title: String,
+    content: String,
+    author: String,
+    author_email: Option<String>,
+    create_time: DateTime<Utc>,
+    modify_time: DateTime<Utc>,
+}
+
+impl Post {
+    pub fn new(
+        title: String,
+        content: String,
+        author: String,
+        author_email: Option<String>,
+        create_time: i64,
+        modify_time: i64,
+        url_regex_args: &Regex,
+    ) -> Self {
+        let create_time = DateTime::from_utc(NaiveDateTime::from_timestamp(create_time, 0), Utc);
+        let modify_time = DateTime::from_utc(NaiveDateTime::from_timestamp(modify_time, 0), Utc);
+
+        let year = create_time
+            .with_timezone(&Config::read().settings.timezone)
+            .year()
+            .to_string();
+
+        let month = create_time
+            .with_timezone(&Config::read().settings.timezone)
+            .month()
+            .to_string();
+
+        let url = url_regex_args
+            .replace_all(
+                &Config::read().url_patterns.post_url,
+                |cap: &Captures| match &cap[0] {
+                    "{slug}" => &title,
+                    "{year}" => &year,
+                    "{month}" => &month,
+                    _ => unreachable!(),
+                },
+            )
+            .into_owned();
+
+        Self {
+            url,
+            title,
+            content,
+            author,
+            author_email,
+            create_time,
+            modify_time,
+        }
+    }
+
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+
+    pub fn author(&self) -> &str {
+        &self.author
+    }
+
+    pub fn author_email(&self) -> Option<&str> {
+        self.author_email.as_deref()
+    }
+}
+
+impl Ord for Post {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.create_time.cmp(&other.create_time) {
+            Ordering::Equal => self.title.cmp(&other.title),
+            other => other,
+        }
+    }
+}
+
+impl PartialOrd for Post {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }

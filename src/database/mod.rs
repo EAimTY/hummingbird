@@ -1,16 +1,22 @@
-use self::repo::FileInfo;
+use self::git::GitFileInfo;
 use anyhow::Result;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
 
-pub use self::{pages::Pages, posts::Posts, repo::Repo, theme::Theme};
+pub use self::{
+    data_type::DataType,
+    git::Repo,
+    page::{Page, Pages},
+    post::{Post, Posts},
+    theme::Theme,
+};
 
-mod pages;
-mod posts;
-mod repo;
+mod git;
+mod page;
+mod post;
 mod theme;
 
-pub mod data;
+pub mod data_type;
 
 pub struct DatabaseData {
     pub repo: Repo,
@@ -75,6 +81,6 @@ impl Database {
 #[derive(Debug)]
 pub struct Update {
     pub theme: Theme,
-    pub page_files_info_map: HashMap<PathBuf, FileInfo>,
-    pub post_files_info_map: HashMap<PathBuf, FileInfo>,
+    pub page_files_info_map: HashMap<PathBuf, GitFileInfo>,
+    pub post_files_info_map: HashMap<PathBuf, GitFileInfo>,
 }
