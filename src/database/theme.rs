@@ -33,20 +33,6 @@ impl Theme {
                     })
                     .collect::<String>(),
             )),
-            DataType::Author { data, author } => {
-                let list = data
-                    .into_iter()
-                    .map(|post| {
-                        format!(
-                            "{}\n{}\n\n",
-                            post.title().to_owned(),
-                            post.content().to_owned()
-                        )
-                    })
-                    .collect::<String>();
-                Response::new(Body::from(format!("{}\n\n{}", author, list)))
-            }
-            DataType::Archive { data, range } => todo!(),
             DataType::NotFound => Response::builder()
                 .status(404)
                 .body(Body::from("not found"))
