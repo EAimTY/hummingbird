@@ -1,10 +1,30 @@
-use super::super::{git, Repo, Theme, Update};
+use super::{Theme, Update};
 use crate::Config;
 use anyhow::Result;
-use git2::{DiffFindOptions, ResetType};
+use git2::{
+    build::RepoBuilder, Cred, DiffFindOptions, FetchOptions, ProxyOptions, RemoteCallbacks,
+    Repository, ResetType,
+};
 use std::{collections::HashMap, path::PathBuf};
+use tempfile::TempDir;
+
+pub struct Repo {
+    pub repo: Repository,
+    pub tempdir: TempDir,
+}
 
 impl Repo {
+    pub fn init() -> Result<Self> {
+        let mut builder = RepoBuilder::new();
+        builder.fetch_options(get_fetch_options());
+
+        let tempdir = TempDir::new()?;
+
+        let repo = builder.clone(&Config::read().git.repository, tempdir.path())?;
+
+        Ok(Self { repo, tempdir })
+    }
+
     pub async fn get_update(&mut self) -> Result<Update> {
         self.fetch()?;
 
@@ -22,7 +42,7 @@ impl Repo {
 
         origin_remote.fetch(
             &[&Config::read().git.branch],
-            Some(&mut git::get_fetch_options()),
+            Some(&mut get_fetch_options()),
             None,
         )?;
         let oid = self.repo.refname_to_id(&format!(
@@ -201,6 +221,31 @@ impl Repo {
 
         Ok((page_files_info_map, post_files_info_map))
     }
+}
+
+#[allow(clippy::non_send_fields_in_send_ty)]
+unsafe impl Send for Repo {}
+unsafe impl Sync for Repo {}
+
+fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
+    let mut fetch_options = FetchOptions::new();
+
+    if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
+        let mut proxy_option = ProxyOptions::new();
+        proxy_option.url(proxy_url);
+        fetch_options.proxy_options(proxy_option);
+    }
+
+    if let (Some(username), Some(password)) = (
+        Config::read().git.user.as_ref(),
+        Config::read().git.password.as_ref(),
+    ) {
+        let mut remote_callbacks = RemoteCallbacks::new();
+        remote_callbacks.credentials(move |_, _, _| Cred::userpass_plaintext(username, password));
+        fetch_options.remote_callbacks(remote_callbacks);
+    }
+
+    fetch_options
 }
 
 #[derive(Debug, Clone)]
