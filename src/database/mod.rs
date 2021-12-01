@@ -1,7 +1,7 @@
 use self::git::GitFileInfo;
 use anyhow::{anyhow, Result};
 use once_cell::sync::OnceCell;
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf};
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub use self::{
@@ -19,7 +19,7 @@ mod theme;
 
 pub mod data_type;
 
-static DATABASE: OnceCell<Arc<RwLock<Database>>> = OnceCell::new();
+static DATABASE: OnceCell<RwLock<Database>> = OnceCell::new();
 
 pub struct Database {
     pub repo: Repo,
@@ -73,7 +73,7 @@ impl DatabaseManager {
 
         let data = Database::init().await?;
         DATABASE
-            .set(Arc::new(RwLock::new(data)))
+            .set(RwLock::new(data))
             .map_err(|_| anyhow!("Failed to initialize database"))?;
 
         println!("Database Initialization finished.");
