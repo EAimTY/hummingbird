@@ -1,10 +1,10 @@
-use self::git::GitFileInfo;
+use self::git::ParsedGitRepo;
 use anyhow::{anyhow, Result};
 use once_cell::sync::OnceCell;
-use std::{collections::HashMap, path::PathBuf};
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub use self::{
+    author::Authors,
     data_type::DataType,
     git::Repo,
     page::{Page, Pages},
@@ -12,6 +12,7 @@ pub use self::{
     theme::Theme,
 };
 
+mod author;
 mod git;
 mod page;
 mod post;
@@ -26,39 +27,50 @@ pub struct Database {
     pub theme: Theme,
     pub posts: Posts,
     pub pages: Pages,
+    pub authors: Authors,
 }
 
 impl Database {
     pub async fn init() -> Result<Database> {
         let mut repo = Repo::init()?;
 
-        let Update {
+        let ParsedGitRepo {
             theme,
-            page_files_info_map,
-            post_files_info_map,
-        } = repo.get_update().await?;
+            pages_git_file_info,
+            posts_git_file_info,
+            mut authors,
+        } = repo.parse().await?;
 
-        let pages = Pages::from_file_info(page_files_info_map, repo.tempdir.path()).await?;
-        let posts = Posts::from_file_info(post_files_info_map, repo.tempdir.path()).await?;
+        let pages = Pages::from_git_file_info(pages_git_file_info, repo.tempdir.path()).await?;
+        let posts = Posts::from_git_file_info(posts_git_file_info, repo.tempdir.path()).await?;
+
+        authors.update_index(&pages, &posts);
 
         Ok(Self {
             repo,
             theme,
             posts,
             pages,
+            authors,
         })
     }
 
     pub async fn update(&mut self) -> Result<()> {
-        let Update {
+        let ParsedGitRepo {
             theme,
-            page_files_info_map,
-            post_files_info_map,
-        } = self.repo.get_update().await?;
+            pages_git_file_info,
+            posts_git_file_info,
+            mut authors,
+        } = self.repo.parse().await?;
 
         self.theme = theme;
-        self.pages = Pages::from_file_info(page_files_info_map, self.repo.tempdir.path()).await?;
-        self.posts = Posts::from_file_info(post_files_info_map, self.repo.tempdir.path()).await?;
+        self.pages =
+            Pages::from_git_file_info(pages_git_file_info, self.repo.tempdir.path()).await?;
+        self.posts =
+            Posts::from_git_file_info(posts_git_file_info, self.repo.tempdir.path()).await?;
+
+        authors.update_index(&self.pages, &self.posts);
+        self.authors = authors;
 
         Ok(())
     }
@@ -90,11 +102,4 @@ impl DatabaseManager {
         let db_lock = DATABASE.get().unwrap();
         db_lock.write().await
     }
-}
-
-#[derive(Debug)]
-pub struct Update {
-    pub theme: Theme,
-    pub page_files_info_map: HashMap<PathBuf, GitFileInfo>,
-    pub post_files_info_map: HashMap<PathBuf, GitFileInfo>,
 }

@@ -18,7 +18,7 @@ pub struct Posts {
 }
 
 impl Posts {
-    pub async fn from_file_info(
+    pub async fn from_git_file_info(
         file_info: HashMap<PathBuf, GitFileInfo>,
         tempdir: &Path,
     ) -> Result<Self> {
@@ -49,7 +49,7 @@ impl Posts {
         let url_map = data
             .iter()
             .enumerate()
-            .map(|(idx, post)| (post.url().to_owned(), idx))
+            .map(|(idx, post)| (post.url.to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
         Ok(Self { data, url_map })
@@ -85,19 +85,19 @@ impl Posts {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Post {
-    url: String,
-    title: String,
-    content: String,
-    author: Option<String>,
-    create_time: DateTime<Utc>,
-    modify_time: DateTime<Utc>,
+    pub url: String,
+    pub title: String,
+    pub content: String,
+    pub author: Option<usize>,
+    pub create_time: DateTime<Utc>,
+    pub modify_time: DateTime<Utc>,
 }
 
 impl Post {
     pub fn new(
         title: String,
         content: String,
-        author: Option<String>,
+        author: Option<usize>,
         create_time: i64,
         modify_time: i64,
         url_regex_args: &Regex,
@@ -135,22 +135,6 @@ impl Post {
             create_time,
             modify_time,
         }
-    }
-
-    pub fn url(&self) -> &str {
-        &self.url
-    }
-
-    pub fn title(&self) -> &str {
-        &self.title
-    }
-
-    pub fn content(&self) -> &str {
-        &self.content
-    }
-
-    pub fn author(&self) -> Option<&str> {
-        self.author.as_deref()
     }
 }
 

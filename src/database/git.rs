@@ -1,4 +1,4 @@
-use super::{Theme, Update};
+use super::{Authors, Theme};
 use crate::Config;
 use anyhow::Result;
 use git2::{
@@ -25,42 +25,13 @@ impl Repo {
         Ok(Self { repo, tempdir })
     }
 
-    pub async fn get_update(&mut self) -> Result<Update> {
+    pub async fn parse(&mut self) -> Result<ParsedGitRepo> {
         self.fetch()?;
 
-        let (page_files_info_map, post_files_info_map) = self.get_page_and_post_files_info()?;
+        let mut pages_git_file_info = HashMap::new();
+        let mut posts_git_file_info = HashMap::new();
 
-        Ok(Update {
-            theme: Theme::new(),
-            page_files_info_map,
-            post_files_info_map,
-        })
-    }
-
-    fn fetch(&mut self) -> Result<()> {
-        let mut origin_remote = self.repo.find_remote("origin")?;
-
-        origin_remote.fetch(
-            &[&Config::read().git.branch],
-            Some(&mut get_fetch_options()),
-            None,
-        )?;
-        let oid = self.repo.refname_to_id(&format!(
-            "refs/remotes/origin/{}",
-            &Config::read().git.branch
-        ))?;
-
-        let object = self.repo.find_object(oid, None)?;
-        self.repo.reset(&object, ResetType::Hard, None)?;
-
-        Ok(())
-    }
-
-    fn get_page_and_post_files_info(
-        &self,
-    ) -> Result<(HashMap<PathBuf, GitFileInfo>, HashMap<PathBuf, GitFileInfo>)> {
-        let mut page_files_info_map = HashMap::new();
-        let mut post_files_info_map = HashMap::new();
+        let mut authors = Authors::new();
 
         let mut status_map = HashMap::new();
 
@@ -101,9 +72,9 @@ impl Repo {
                             })
                         {
                             let entry = if let ContentType::Page = content_type {
-                                page_files_info_map.entry(path)
+                                pages_git_file_info.entry(path)
                             } else {
-                                post_files_info_map.entry(path)
+                                posts_git_file_info.entry(path)
                             };
 
                             entry.or_insert_with(|| {
@@ -130,9 +101,9 @@ impl Repo {
                         }) {
                             FileStatus::Created(content_type) => {
                                 let entry = if let ContentType::Page = content_type {
-                                    page_files_info_map.entry(path)
+                                    pages_git_file_info.entry(path)
                                 } else {
-                                    post_files_info_map.entry(path)
+                                    posts_git_file_info.entry(path)
                                 };
 
                                 let info = entry.or_insert_with(|| {
@@ -143,18 +114,19 @@ impl Repo {
                                 });
 
                                 info.set(
-                                    commit.author().name(),
+                                    authors.get_idx(commit.author().name()),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );
                             }
                             FileStatus::Renamed(new_path) => {
                                 let info =
-                                    page_files_info_map.get_mut(new_path).unwrap_or_else(|| {
-                                        post_files_info_map.get_mut(new_path).unwrap()
+                                    pages_git_file_info.get_mut(new_path).unwrap_or_else(|| {
+                                        posts_git_file_info.get_mut(new_path).unwrap()
                                     });
+
                                 info.set(
-                                    commit.author().name(),
+                                    authors.get_idx(commit.author().name()),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );
@@ -183,9 +155,9 @@ impl Repo {
                         {
                             FileStatus::Created(content_type) => {
                                 let entry = if let ContentType::Page = content_type {
-                                    page_files_info_map.entry(new_path.clone())
+                                    pages_git_file_info.entry(new_path.clone())
                                 } else {
-                                    post_files_info_map.entry(new_path.clone())
+                                    posts_git_file_info.entry(new_path.clone())
                                 };
 
                                 entry.or_insert_with(|| {
@@ -219,7 +191,31 @@ impl Repo {
             }
         }
 
-        Ok((page_files_info_map, post_files_info_map))
+        Ok(ParsedGitRepo {
+            theme: Theme::new(),
+            pages_git_file_info,
+            posts_git_file_info,
+            authors,
+        })
+    }
+
+    fn fetch(&mut self) -> Result<()> {
+        let mut origin_remote = self.repo.find_remote("origin")?;
+
+        origin_remote.fetch(
+            &[&Config::read().git.branch],
+            Some(&mut get_fetch_options()),
+            None,
+        )?;
+        let oid = self.repo.refname_to_id(&format!(
+            "refs/remotes/origin/{}",
+            &Config::read().git.branch
+        ))?;
+
+        let object = self.repo.find_object(oid, None)?;
+        self.repo.reset(&object, ResetType::Hard, None)?;
+
+        Ok(())
     }
 }
 
@@ -249,8 +245,16 @@ fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
 }
 
 #[derive(Debug, Clone)]
+pub struct ParsedGitRepo {
+    pub theme: Theme,
+    pub posts_git_file_info: HashMap<PathBuf, GitFileInfo>,
+    pub pages_git_file_info: HashMap<PathBuf, GitFileInfo>,
+    pub authors: Authors,
+}
+
+#[derive(Debug, Clone)]
 pub struct GitFileInfo {
-    pub author: Option<String>,
+    pub author: Option<usize>,
     pub create_time: Option<i64>,
     pub modify_time: i64,
 }
@@ -264,8 +268,8 @@ impl GitFileInfo {
         }
     }
 
-    fn set(&mut self, author: Option<&str>, create_time: i64) {
-        self.author = author.map(|name| name.to_owned());
+    fn set(&mut self, author: Option<usize>, create_time: i64) {
+        self.author = author;
         self.create_time = Some(create_time);
     }
 }
