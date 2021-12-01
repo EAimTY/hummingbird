@@ -35,8 +35,7 @@ impl Pages {
                 let page = Page::new(
                     title,
                     content,
-                    info.author_name.unwrap(),
-                    info.author_email,
+                    info.author,
                     info.create_time.unwrap(),
                     info.modify_time,
                     &page_url_regex_args,
@@ -68,8 +67,7 @@ pub struct Page {
     url: String,
     title: String,
     content: String,
-    author: String,
-    author_email: Option<String>,
+    author: Option<String>,
     create_time: DateTime<Utc>,
     modify_time: DateTime<Utc>,
 }
@@ -78,8 +76,7 @@ impl Page {
     pub fn new(
         title: String,
         content: String,
-        author: String,
-        author_email: Option<String>,
+        author: Option<String>,
         create_time: i64,
         modify_time: i64,
         url_regex_args: &Regex,
@@ -102,7 +99,6 @@ impl Page {
             title,
             content,
             author,
-            author_email,
             create_time,
             modify_time,
         }
@@ -120,12 +116,8 @@ impl Page {
         &self.content
     }
 
-    pub fn author(&self) -> &str {
-        &self.author
-    }
-
-    pub fn author_email(&self) -> Option<&str> {
-        self.author_email.as_deref()
+    pub fn author(&self) -> Option<&str> {
+        self.author.as_deref()
     }
 }
 
