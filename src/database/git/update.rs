@@ -123,8 +123,7 @@ impl Repo {
                                 });
 
                                 info.set(
-                                    commit.author().name().unwrap_or("Anonymous"),
-                                    commit.author().email(),
+                                    commit.author().name(),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );
@@ -135,8 +134,7 @@ impl Repo {
                                         post_files_info_map.get_mut(new_path).unwrap()
                                     });
                                 info.set(
-                                    commit.author().name().unwrap_or("Anonymous"),
-                                    commit.author().email(),
+                                    commit.author().name(),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );
@@ -207,8 +205,7 @@ impl Repo {
 
 #[derive(Debug, Clone)]
 pub struct GitFileInfo {
-    pub author_name: Option<String>,
-    pub author_email: Option<String>,
+    pub author: Option<String>,
     pub create_time: Option<i64>,
     pub modify_time: i64,
 }
@@ -216,16 +213,14 @@ pub struct GitFileInfo {
 impl GitFileInfo {
     fn new(modify_time: i64) -> Self {
         Self {
-            author_name: None,
-            author_email: None,
+            author: None,
             create_time: None,
             modify_time,
         }
     }
 
-    fn set(&mut self, author_name: &str, author_email: Option<&str>, create_time: i64) {
-        self.author_name = Some(author_name.to_owned());
-        self.author_email = author_email.map(|email| email.to_owned());
+    fn set(&mut self, author: Option<&str>, create_time: i64) {
+        self.author = author.map(|name| name.to_owned());
         self.create_time = Some(create_time);
     }
 }

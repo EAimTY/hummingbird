@@ -1,4 +1,4 @@
-use super::{data_type::DateRange, git::GitFileInfo, DataType};
+use super::{git::GitFileInfo, DataType};
 use crate::Config;
 use anyhow::Result;
 use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
@@ -7,7 +7,6 @@ use std::{
     cmp::Ordering,
     collections::{BinaryHeap, HashMap},
     ffi::OsStr,
-    ops::Range,
     path::{Path, PathBuf},
 };
 use tokio::fs;
@@ -17,7 +16,6 @@ pub struct Posts {
     data: Vec<Post>,
     url_map: HashMap<String, usize>,
     author_map: HashMap<String, (String, Vec<usize>)>,
-    archive_map: HashMap<String, (DateRange, Range<usize>)>,
 }
 
 impl Posts {
@@ -38,8 +36,7 @@ impl Posts {
                 let post = Post::new(
                     title,
                     content,
-                    info.author_name.unwrap(),
-                    info.author_email,
+                    info.author,
                     info.create_time.unwrap(),
                     info.modify_time,
                     &post_url_regex_args,
@@ -74,19 +71,16 @@ impl Posts {
                     Config::read()
                         .url_patterns
                         .author_url
-                        .replace("{author}", &author),
-                    (author, posts),
+                        .replace("{author}", &author.unwrap()),
+                    (author.unwrap().to_owned(), posts),
                 )
             })
             .collect();
-
-        let archive_map = HashMap::new();
 
         Ok(Self {
             data,
             url_map,
             author_map,
-            archive_map,
         })
     }
 
@@ -136,8 +130,7 @@ pub struct Post {
     url: String,
     title: String,
     content: String,
-    author: String,
-    author_email: Option<String>,
+    author: Option<String>,
     create_time: DateTime<Utc>,
     modify_time: DateTime<Utc>,
 }
@@ -146,8 +139,7 @@ impl Post {
     pub fn new(
         title: String,
         content: String,
-        author: String,
-        author_email: Option<String>,
+        author: Option<String>,
         create_time: i64,
         modify_time: i64,
         url_regex_args: &Regex,
@@ -182,7 +174,6 @@ impl Post {
             title,
             content,
             author,
-            author_email,
             create_time,
             modify_time,
         }
@@ -200,12 +191,8 @@ impl Post {
         &self.content
     }
 
-    pub fn author(&self) -> &str {
-        &self.author
-    }
-
-    pub fn author_email(&self) -> Option<&str> {
-        self.author_email.as_deref()
+    pub fn author(&self) -> Option<&str> {
+        self.author.as_deref()
     }
 }
 
