@@ -13,8 +13,8 @@ use tokio::fs;
 
 #[derive(Debug)]
 pub struct Posts {
-    data: Vec<Post>,
-    url_map: HashMap<String, usize>,
+    pub data: Vec<Post>,
+    pub url_map: HashMap<String, usize>,
 }
 
 impl Posts {
