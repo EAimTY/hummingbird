@@ -35,7 +35,25 @@ impl Authors {
     }
 
     pub fn update_index(&mut self, pages: &Pages, posts: &Posts) {
-        todo!();
+        pages
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(_, page)| page.author.is_some())
+            .for_each(|(idx, _)| {
+                let author_info = self.author_map.get_mut(&self.authors[idx]).unwrap();
+                author_info.pages.push(idx);
+            });
+
+        posts
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(_, post)| post.author.is_some())
+            .for_each(|(idx, _)| {
+                let author_info = self.author_map.get_mut(&self.authors[idx]).unwrap();
+                author_info.posts.push(idx);
+            });
     }
 }
 
