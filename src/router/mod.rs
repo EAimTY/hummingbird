@@ -4,7 +4,6 @@ use once_cell::sync::OnceCell;
 use regex::{Regex, RegexSet};
 use std::convert::Infallible;
 
-mod author;
 mod index;
 mod not_found;
 mod page;
@@ -38,19 +37,11 @@ impl Router {
         let post_args = Regex::new(r"\\\{slug\\\}|\\\{year\\\}|\\\{month\\\}").unwrap();
         let post_url = post_args.replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
 
-        let author_url = format!(
-            "^{}$",
-            regex::escape(&Config::read().url_patterns.author_url)
-        );
-        let author_args = Regex::new(r"\\\{author\\\}").unwrap();
-        let author_url = author_args.replace_all(&author_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
-
         let url_patterns = RegexSet::new(&[
             &index_url,
             &update_url,
             page_url.as_ref(),
             post_url.as_ref(),
-            author_url.as_ref(),
         ])
         .unwrap();
 
@@ -82,11 +73,6 @@ impl Router {
                         return Ok(res);
                     }
                 }
-                UrlPatternKind::Author => {
-                    if let Some(res) = author::handle(&req).await {
-                        return Ok(res);
-                    }
-                }
             }
         }
 
@@ -103,7 +89,6 @@ impl Router {
                 1 => UrlPatternKind::Update,
                 2 => UrlPatternKind::Page,
                 3 => UrlPatternKind::Post,
-                4 => UrlPatternKind::Author,
                 _ => unreachable!(),
             })
     }
@@ -114,5 +99,4 @@ enum UrlPatternKind {
     Update,
     Page,
     Post,
-    Author,
 }

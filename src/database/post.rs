@@ -15,7 +15,6 @@ use tokio::fs;
 pub struct Posts {
     data: Vec<Post>,
     url_map: HashMap<String, usize>,
-    author_map: HashMap<String, (String, Vec<usize>)>,
 }
 
 impl Posts {
@@ -53,35 +52,7 @@ impl Posts {
             .map(|(idx, post)| (post.url().to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
-        let author_map =
-            data.iter()
-                .enumerate()
-                .fold(HashMap::new(), |mut author_map, (idx, post)| {
-                    let posts = author_map
-                        .entry(post.author().to_owned())
-                        .or_insert_with(Vec::new);
-                    posts.push(idx);
-                    author_map
-                });
-
-        let author_map = author_map
-            .into_iter()
-            .map(|(author, posts)| {
-                (
-                    Config::read()
-                        .url_patterns
-                        .author_url
-                        .replace("{author}", &author.unwrap()),
-                    (author.unwrap().to_owned(), posts),
-                )
-            })
-            .collect();
-
-        Ok(Self {
-            data,
-            url_map,
-            author_map,
-        })
+        Ok(Self { data, url_map })
     }
 
     pub fn get(&self, path: &str) -> Option<DataType> {
@@ -109,19 +80,6 @@ impl Posts {
         };
 
         Some(DataType::Index { data })
-    }
-
-    pub fn get_author(&self, path: &str) -> Option<DataType> {
-        if self.author_map.is_empty() {
-            return None;
-        }
-        self.author_map.get(path).map(|(author, posts)| {
-            let data = posts.iter().map(|id| &self.data[*id]).collect();
-            DataType::Author {
-                data,
-                author: author.to_owned(),
-            }
-        })
     }
 }
 
