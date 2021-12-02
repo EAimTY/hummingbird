@@ -9,10 +9,10 @@ mod page;
 mod post;
 mod update;
 
-static ROUTER: OnceCell<Router> = OnceCell::new();
+static ROUTE_TABLE: OnceCell<RouteTable> = OnceCell::new();
 
 #[derive(Debug)]
-pub struct Router {
+pub struct RouteTable {
     path_map: RwLock<PathMap>,
     path_trie: PathTrie,
 }
@@ -52,9 +52,9 @@ impl PathTrie {
     }
 }
 
-impl Router {
+impl RouteTable {
     pub fn init() {
-        ROUTER
+        ROUTE_TABLE
             .set(Self {
                 path_trie: PathTrie::new(),
                 path_map: RwLock::new(PathMap::new()),
@@ -63,9 +63,9 @@ impl Router {
     }
 
     pub async fn route(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
-        let router = ROUTER.get().unwrap();
+        let route_table = ROUTE_TABLE.get().unwrap();
 
-        let path_map = router.path_map.read().await;
+        let path_map = route_table.path_map.read().await;
 
         match path_map.match_pattern(&req.uri().path()) {
             Some(DataType::Page { id: page_id }) => {
@@ -81,7 +81,7 @@ impl Router {
             _ => {}
         }
 
-        match router.path_trie.match_pattern(&req.uri().path()) {
+        match route_table.path_trie.match_pattern(&req.uri().path()) {
             Some(DataType::Index) => {
                 if let Some(res) = index::handle(&req).await {
                     return Ok(res);
@@ -99,14 +99,14 @@ impl Router {
     }
 
     pub async fn update_page_map(page_map: HashMap<String, usize>) {
-        let router = ROUTER.get().unwrap();
-        let mut path_map = router.path_map.write().await;
+        let route_table = ROUTE_TABLE.get().unwrap();
+        let mut path_map = route_table.path_map.write().await;
         path_map.pages = page_map;
     }
 
     pub async fn update_post_map(post_map: HashMap<String, usize>) {
-        let router = ROUTER.get().unwrap();
-        let mut path_map = router.path_map.write().await;
+        let route_table = ROUTE_TABLE.get().unwrap();
+        let mut path_map = route_table.path_map.write().await;
         path_map.posts = post_map;
     }
 }

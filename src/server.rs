@@ -1,4 +1,4 @@
-use crate::Router;
+use crate::RouteTable;
 use anyhow::Result;
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -7,10 +7,8 @@ use hyper::{
 use std::{convert::Infallible, net::SocketAddr};
 
 pub async fn start() -> Result<()> {
-    Router::init();
-
     let service = make_service_fn(move |_| {
-        let service = service_fn(move |req| Router::route(req));
+        let service = service_fn(move |req| RouteTable::route(req));
         async move { Ok::<_, Infallible>(service) }
     });
 

@@ -3,7 +3,7 @@ use std::env;
 pub use crate::{
     config::{Config, ConfigBuilder},
     database::DatabaseManager,
-    router::Router,
+    router::RouteTable,
 };
 
 mod config;
@@ -24,6 +24,8 @@ async fn main() {
             return;
         }
     }
+
+    RouteTable::init();
 
     match DatabaseManager::init().await {
         Ok(_) => {}
