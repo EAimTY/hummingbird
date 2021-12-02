@@ -1,4 +1,5 @@
 use self::git::ParsedGitRepo;
+use crate::RouteTable;
 use anyhow::{anyhow, Error, Result};
 use once_cell::sync::OnceCell;
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -62,6 +63,8 @@ impl Database {
             posts_git_file_info,
             mut authors,
         } = self.repo.parse().await?;
+
+        RouteTable::clear_path_map().await?;
 
         self.theme = theme;
         self.pages =

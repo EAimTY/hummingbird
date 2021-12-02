@@ -25,7 +25,13 @@ async fn main() {
         }
     }
 
-    RouteTable::init();
+    match RouteTable::init() {
+        Ok(_) => {}
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
+    };
 
     match DatabaseManager::init().await {
         Ok(_) => {}
