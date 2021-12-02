@@ -114,7 +114,7 @@ impl Repo {
                                 });
 
                                 info.set(
-                                    authors.get_idx(commit.author().name()),
+                                    authors.get_author_id(commit.author().name()),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );
@@ -126,7 +126,7 @@ impl Repo {
                                     });
 
                                 info.set(
-                                    authors.get_idx(commit.author().name()),
+                                    authors.get_author_id(commit.author().name()),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );

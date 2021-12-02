@@ -16,7 +16,7 @@ impl Authors {
         }
     }
 
-    pub fn get_idx(&mut self, author: Option<&str>) -> Option<usize> {
+    pub fn get_author_id(&mut self, author: Option<&str>) -> Option<usize> {
         if let Some(author) = author {
             match self.author_map.entry(author.to_owned()) {
                 Entry::Occupied(entry) => Some(entry.get().idx),
@@ -39,7 +39,7 @@ impl Authors {
             .data
             .iter()
             .enumerate()
-            .filter(|(_, page)| page.author.is_some())
+            .filter(|(_, page)| page.author_id.is_some())
             .for_each(|(idx, _)| {
                 let author_info = self.author_map.get_mut(&self.authors[idx]).unwrap();
                 author_info.pages.push(idx);
@@ -49,7 +49,7 @@ impl Authors {
             .data
             .iter()
             .enumerate()
-            .filter(|(_, post)| post.author.is_some())
+            .filter(|(_, post)| post.author_id.is_some())
             .for_each(|(idx, _)| {
                 let author_info = self.author_map.get_mut(&self.authors[idx]).unwrap();
                 author_info.posts.push(idx);
