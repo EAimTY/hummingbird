@@ -1,8 +1,7 @@
-use crate::Config;
 use hyper::{Body, Request, Response};
 use once_cell::sync::OnceCell;
-use regex::{Regex, RegexSet};
-use std::convert::Infallible;
+use std::{collections::HashMap, convert::Infallible};
+use tokio::sync::RwLock;
 
 mod index;
 mod not_found;
@@ -14,89 +13,108 @@ static ROUTER: OnceCell<Router> = OnceCell::new();
 
 #[derive(Debug)]
 pub struct Router {
-    url_patterns: RegexSet,
+    path_map: RwLock<PathMap>,
+    path_trie: PathTrie,
+}
+
+#[derive(Debug)]
+pub struct PathMap {
+    pub pages: HashMap<String, usize>,
+    pub posts: HashMap<String, usize>,
+}
+
+impl PathMap {
+    pub fn new() -> Self {
+        Self {
+            pages: HashMap::new(),
+            posts: HashMap::new(),
+        }
+    }
+
+    pub fn match_pattern(&self, path: &str) -> Option<DataType> {
+        self.pages.get(path).map_or_else(
+            || self.posts.get(path).map(|&id| DataType::Post { id }),
+            |&id| Some(DataType::Page { id }),
+        )
+    }
+}
+
+#[derive(Debug)]
+pub struct PathTrie;
+
+impl PathTrie {
+    pub fn new() -> Self {
+        Self
+    }
+
+    pub fn match_pattern(&self, path: &str) -> Option<DataType> {
+        None
+    }
 }
 
 impl Router {
     pub fn init() {
-        let index_url = format!(
-            "^{}$",
-            regex::escape(&Config::read().url_patterns.index_url)
-        );
-
-        let update_url = format!(
-            "^{}$",
-            regex::escape(&Config::read().url_patterns.update_url)
-        );
-
-        let page_url = format!("^{}$", regex::escape(&Config::read().url_patterns.page_url));
-        let page_args = Regex::new(r":slug").unwrap();
-        let page_url = page_args.replace_all(&page_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
-
-        let post_url = format!("^{}$", regex::escape(&Config::read().url_patterns.post_url));
-        let post_args = Regex::new(r":slug|:year|:month").unwrap();
-        let post_url = post_args.replace_all(&post_url, r"([A-Za-z\d._~!$&'()*+,;=:@%-])+");
-
-        let url_patterns = RegexSet::new(&[
-            &index_url,
-            &update_url,
-            page_url.as_ref(),
-            post_url.as_ref(),
-        ])
-        .unwrap();
-
-        ROUTER.set(Self { url_patterns }).unwrap();
+        ROUTER
+            .set(Self {
+                path_trie: PathTrie::new(),
+                path_map: RwLock::new(PathMap::new()),
+            })
+            .unwrap();
     }
 
     pub async fn route(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
         let router = ROUTER.get().unwrap();
 
-        for pattern in router.get_url_pattern(&req) {
-            match pattern {
-                UrlPatternKind::Index => {
-                    if let Some(res) = index::handle(&req).await {
-                        return Ok(res);
-                    }
-                }
-                UrlPatternKind::Update => {
-                    if let Some(res) = update::handle(&mut req).await {
-                        return Ok(res);
-                    }
-                }
-                UrlPatternKind::Page => {
-                    if let Some(res) = page::handle(&req).await {
-                        return Ok(res);
-                    }
-                }
-                UrlPatternKind::Post => {
-                    if let Some(res) = post::handle(&req).await {
-                        return Ok(res);
-                    }
+        let path_map = router.path_map.read().await;
+
+        match path_map.match_pattern(&req.uri().path()) {
+            Some(DataType::Page { id: page_id }) => {
+                if let Some(res) = page::handle(&req, page_id).await {
+                    return Ok(res);
                 }
             }
+            Some(DataType::Post { id: post_id }) => {
+                if let Some(res) = post::handle(&req, post_id).await {
+                    return Ok(res);
+                }
+            }
+            _ => {}
+        }
+
+        match router.path_trie.match_pattern(&req.uri().path()) {
+            Some(DataType::Index) => {
+                if let Some(res) = index::handle(&req).await {
+                    return Ok(res);
+                }
+            }
+            Some(DataType::Update) => {
+                if let Some(res) = update::handle(&mut req).await {
+                    return Ok(res);
+                }
+            }
+            _ => {}
         }
 
         Ok(not_found::handle(&req).await)
     }
 
-    fn get_url_pattern(&self, req: &Request<Body>) -> impl Iterator<Item = UrlPatternKind> {
-        let path = req.uri().path();
-        self.url_patterns
-            .matches(path)
-            .into_iter()
-            .map(|n| match n {
-                0 => UrlPatternKind::Index,
-                1 => UrlPatternKind::Update,
-                2 => UrlPatternKind::Page,
-                3 => UrlPatternKind::Post,
-                _ => unreachable!(),
-            })
+    pub async fn update_page_map(page_map: HashMap<String, usize>) {
+        let router = ROUTER.get().unwrap();
+        let mut path_map = router.path_map.write().await;
+        path_map.pages = page_map;
+    }
+
+    pub async fn update_post_map(post_map: HashMap<String, usize>) {
+        let router = ROUTER.get().unwrap();
+        let mut path_map = router.path_map.write().await;
+        path_map.posts = post_map;
     }
 }
 
-enum UrlPatternKind {
+pub enum DataType {
+    Post { id: usize },
+    Page { id: usize },
     Index,
     Update,
-    Page,
-    Post,
+    NotFound,
 }

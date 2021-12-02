@@ -1,16 +1,9 @@
-use crate::database::{Page, Post};
-use anyhow::Error;
+use super::{DatabaseUpdateResult, Page, Post};
 
 pub enum DataType<'data> {
     Post(&'data Post),
     Page(&'data Page),
     Index { data: Vec<&'data Post> },
-    Update(UpdateResult),
+    Update(DatabaseUpdateResult),
     NotFound,
-}
-
-pub enum UpdateResult {
-    Success,
-    PermissionDenied,
-    Error(Error),
 }
