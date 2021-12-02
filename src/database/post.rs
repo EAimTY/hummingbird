@@ -88,7 +88,7 @@ pub struct Post {
     pub url: String,
     pub title: String,
     pub content: String,
-    pub author: Option<usize>,
+    pub author_id: Option<usize>,
     pub create_time: DateTime<Utc>,
     pub modify_time: DateTime<Utc>,
 }
@@ -97,7 +97,7 @@ impl Post {
     pub fn new(
         title: String,
         content: String,
-        author: Option<usize>,
+        author_id: Option<usize>,
         create_time: i64,
         modify_time: i64,
         url_regex_args: &Regex,
@@ -131,7 +131,7 @@ impl Post {
             url,
             title,
             content,
-            author,
+            author_id,
             create_time,
             modify_time,
         }
