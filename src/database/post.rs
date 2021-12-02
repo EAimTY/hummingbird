@@ -1,5 +1,5 @@
 use super::{git::GitFileInfo, DataType};
-use crate::{Config, Router};
+use crate::{Config, RouteTable};
 use anyhow::Result;
 use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
 use regex::{Captures, Regex};
@@ -51,7 +51,7 @@ impl Posts {
             .map(|(idx, post)| (post.path.to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
-        Router::update_post_map(path_map).await;
+        RouteTable::update_post_map(path_map).await;
 
         Ok(Self { data })
     }
