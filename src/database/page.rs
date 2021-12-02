@@ -23,7 +23,7 @@ impl Pages {
         tempdir: &Path,
     ) -> Result<Self> {
         let mut data = BinaryHeap::new();
-        let page_url_regex_args = Regex::new(r"(\{slug\})").unwrap();
+        let page_url_regex_args = Regex::new(r":slug").unwrap();
 
         for (path, info) in file_info.into_iter() {
             if path.extension() == Some(OsStr::new("md")) {
@@ -88,7 +88,7 @@ impl Page {
             .replace_all(
                 &Config::read().url_patterns.page_url,
                 |cap: &Captures| match &cap[0] {
-                    "{slug}" => &title,
+                    ":slug" => &title,
                     _ => unreachable!(),
                 },
             )
