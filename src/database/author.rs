@@ -40,8 +40,11 @@ impl Authors {
             .iter()
             .enumerate()
             .filter(|(_, page)| page.author_id.is_some())
-            .for_each(|(idx, _)| {
-                let author_info = self.author_map.get_mut(&self.authors[idx]).unwrap();
+            .for_each(|(idx, page)| {
+                let author_info = self
+                    .author_map
+                    .get_mut(&self.authors[page.author_id.unwrap()])
+                    .unwrap();
                 author_info.pages.push(idx);
             });
 
@@ -50,8 +53,11 @@ impl Authors {
             .iter()
             .enumerate()
             .filter(|(_, post)| post.author_id.is_some())
-            .for_each(|(idx, _)| {
-                let author_info = self.author_map.get_mut(&self.authors[idx]).unwrap();
+            .for_each(|(idx, post)| {
+                let author_info = self
+                    .author_map
+                    .get_mut(&self.authors[post.author_id.unwrap()])
+                    .unwrap();
                 author_info.posts.push(idx);
             });
     }
