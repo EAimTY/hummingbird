@@ -1,5 +1,5 @@
 use self::git::ParsedGitRepo;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Error, Result};
 use once_cell::sync::OnceCell;
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
@@ -102,4 +102,10 @@ impl DatabaseManager {
         let db_lock = DATABASE.get().unwrap();
         db_lock.write().await
     }
+}
+
+pub enum DatabaseUpdateResult {
+    Success,
+    PermissionDenied,
+    Error(Error),
 }

@@ -1,5 +1,5 @@
 use super::{git::GitFileInfo, DataType};
-use crate::Config;
+use crate::{Config, Router};
 use anyhow::Result;
 use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
 use regex::{Captures, Regex};
@@ -14,7 +14,6 @@ use tokio::fs;
 #[derive(Debug)]
 pub struct Posts {
     pub data: Vec<Post>,
-    pub url_map: HashMap<String, usize>,
 }
 
 impl Posts {
@@ -46,19 +45,19 @@ impl Posts {
 
         let data = data.into_sorted_vec();
 
-        let url_map = data
+        let path_map = data
             .iter()
             .enumerate()
-            .map(|(idx, post)| (post.url.to_owned(), idx))
+            .map(|(idx, post)| (post.path.to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
-        Ok(Self { data, url_map })
+        Router::update_post_map(path_map).await;
+
+        Ok(Self { data })
     }
 
-    pub fn get(&self, path: &str) -> Option<DataType> {
-        self.url_map
-            .get(path)
-            .map(|id| DataType::Post(&self.data[*id]))
+    pub fn get(&self, id: usize) -> Option<DataType> {
+        self.data.get(id).map(|post| DataType::Post(post))
     }
 
     pub fn get_index(&self) -> Option<DataType> {
@@ -85,7 +84,7 @@ impl Posts {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Post {
-    pub url: String,
+    pub path: String,
     pub title: String,
     pub content: String,
     pub author_id: Option<usize>,
@@ -115,7 +114,7 @@ impl Post {
             .month()
             .to_string();
 
-        let url = url_regex_args
+        let path = url_regex_args
             .replace_all(
                 &Config::read().url_patterns.post_url,
                 |cap: &Captures| match &cap[0] {
@@ -128,7 +127,7 @@ impl Post {
             .into_owned();
 
         Self {
-            url,
+            path,
             title,
             content,
             author_id,

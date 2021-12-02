@@ -1,5 +1,5 @@
 use super::{data_type::DataType, git::GitFileInfo};
-use crate::Config;
+use crate::{Config, Router};
 use anyhow::Result;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use regex::{Captures, Regex};
@@ -14,7 +14,6 @@ use tokio::fs;
 #[derive(Debug)]
 pub struct Pages {
     pub data: Vec<Page>,
-    pub url_map: HashMap<String, usize>,
 }
 
 impl Pages {
@@ -46,25 +45,25 @@ impl Pages {
 
         let data = data.into_sorted_vec();
 
-        let url_map = data
+        let path_map = data
             .iter()
             .enumerate()
-            .map(|(idx, page)| (page.url.to_owned(), idx))
+            .map(|(idx, page)| (page.path.to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
-        Ok(Self { data, url_map })
+        Router::update_page_map(path_map).await;
+
+        Ok(Self { data })
     }
 
-    pub fn get(&self, path: &str) -> Option<DataType> {
-        self.url_map
-            .get(path)
-            .map(|id| DataType::Page(&self.data[*id]))
+    pub fn get(&self, id: usize) -> Option<DataType> {
+        self.data.get(id).map(|page| DataType::Page(page))
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Page {
-    pub url: String,
+    pub path: String,
     pub title: String,
     pub content: String,
     pub author_id: Option<usize>,
@@ -84,7 +83,7 @@ impl Page {
         let create_time = DateTime::from_utc(NaiveDateTime::from_timestamp(create_time, 0), Utc);
         let modify_time = DateTime::from_utc(NaiveDateTime::from_timestamp(modify_time, 0), Utc);
 
-        let url = url_regex_args
+        let path = url_regex_args
             .replace_all(
                 &Config::read().url_patterns.page_url,
                 |cap: &Captures| match &cap[0] {
@@ -95,7 +94,7 @@ impl Page {
             .into_owned();
 
         Self {
-            url,
+            path,
             title,
             content,
             author_id,
