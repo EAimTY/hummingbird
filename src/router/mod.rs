@@ -1,6 +1,7 @@
 use crate::Config;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use hyper::{Body, Request, Response};
+use matchit::Node as PathTrie;
 use once_cell::sync::OnceCell;
 use std::{collections::HashMap, convert::Infallible};
 use tokio::sync::RwLock;
@@ -13,13 +14,11 @@ mod update;
 
 static ROUTE_TABLE: OnceCell<RouteTable> = OnceCell::new();
 
-#[derive(Debug)]
 pub struct RouteTable {
     path_map: RwLock<PathMap>,
-    path_trie: PathTrie,
+    path_trie: PathTrie<DataType>,
 }
 
-#[derive(Debug)]
 pub struct PathMap {
     pub map: HashMap<String, DataType>,
 }
@@ -46,19 +45,6 @@ impl PathMap {
     }
 }
 
-#[derive(Debug)]
-pub struct PathTrie;
-
-impl PathTrie {
-    pub fn new() -> Self {
-        Self
-    }
-
-    pub fn match_pattern(&self, path: &str) -> Option<DataType> {
-        None
-    }
-}
-
 impl RouteTable {
     pub fn init() -> Result<()> {
         ROUTE_TABLE
@@ -66,7 +52,7 @@ impl RouteTable {
                 path_trie: PathTrie::new(),
                 path_map: RwLock::new(PathMap::init()?),
             })
-            .unwrap();
+            .map_err(|_| anyhow!("Failed to initialize route table"))?;
 
         Ok(())
     }
@@ -100,7 +86,7 @@ impl RouteTable {
             _ => {}
         }
 
-        match route_table.path_trie.match_pattern(&req.uri().path()) {
+        match route_table.path_trie.at(&req.uri().path()) {
             _ => {}
         }
 
@@ -137,7 +123,7 @@ impl RouteTable {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum DataType {
     Post { id: usize },
     Page { id: usize },
