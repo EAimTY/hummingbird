@@ -36,13 +36,11 @@ impl Database {
             theme,
             pages_git_file_info,
             posts_git_file_info,
-            mut authors,
         } = repo.parse().await?;
 
         let pages = Pages::from_git_file_info(pages_git_file_info, repo.tempdir.path()).await?;
         let posts = Posts::from_git_file_info(posts_git_file_info, repo.tempdir.path()).await?;
-
-        authors.update_index(&pages, &posts);
+        let authors = Authors::generate(&pages, &posts);
 
         Ok(Self {
             repo,
@@ -58,7 +56,6 @@ impl Database {
             theme,
             pages_git_file_info,
             posts_git_file_info,
-            mut authors,
         } = self.repo.parse().await?;
 
         RouteTable::clear_path_map().await?;
@@ -68,9 +65,7 @@ impl Database {
             Pages::from_git_file_info(pages_git_file_info, self.repo.tempdir.path()).await?;
         self.posts =
             Posts::from_git_file_info(posts_git_file_info, self.repo.tempdir.path()).await?;
-
-        authors.update_index(&self.pages, &self.posts);
-        self.authors = authors;
+        self.authors = Authors::generate(&self.pages, &self.posts);
 
         Ok(())
     }

@@ -66,7 +66,7 @@ pub struct Page {
     pub path: String,
     pub title: String,
     pub content: String,
-    pub author_id: Option<usize>,
+    pub author: Option<String>,
     pub create_time: DateTime<Utc>,
     pub modify_time: DateTime<Utc>,
 }
@@ -75,7 +75,7 @@ impl Page {
     pub fn new(
         title: String,
         content: String,
-        author_id: Option<usize>,
+        author: Option<String>,
         create_time: i64,
         modify_time: i64,
         url_regex_args: &Regex,
@@ -97,7 +97,7 @@ impl Page {
             path,
             title,
             content,
-            author_id,
+            author,
             create_time,
             modify_time,
         }
