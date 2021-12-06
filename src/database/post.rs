@@ -1,4 +1,4 @@
-use super::{git::GitFileInfo, DataType};
+use super::git::GitFileInfo;
 use crate::{Config, RouteTable};
 use anyhow::Result;
 use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
@@ -56,16 +56,12 @@ impl Posts {
         Ok(Self { data })
     }
 
-    pub fn get(&self, id: usize) -> Option<DataType> {
-        self.data.get(id).map(|post| DataType::Post(post))
+    pub fn get(&self, id: usize) -> &Post {
+        &self.data[id]
     }
 
-    pub fn get_index(&self) -> Option<DataType> {
-        if self.data.is_empty() {
-            return None;
-        }
-
-        let data = if Config::read().settings.index_posts_from_old_to_new {
+    pub fn get_index(&self) -> Vec<&Post> {
+        if Config::read().settings.index_posts_from_old_to_new {
             self.data
                 .iter()
                 .take(Config::read().settings.index_posts_count)
@@ -76,9 +72,7 @@ impl Posts {
                 .rev()
                 .take(Config::read().settings.index_posts_count)
                 .collect()
-        };
-
-        Some(DataType::Index { data })
+        }
     }
 }
 

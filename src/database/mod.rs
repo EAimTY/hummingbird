@@ -6,7 +6,6 @@ use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub use self::{
     author::Authors,
-    data_type::DataType,
     git::Repo,
     page::{Page, Pages},
     post::{Post, Posts},
@@ -18,8 +17,6 @@ mod git;
 mod page;
 mod post;
 mod theme;
-
-pub mod data_type;
 
 static DATABASE: OnceCell<RwLock<Database>> = OnceCell::new();
 
