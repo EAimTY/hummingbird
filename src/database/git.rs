@@ -1,4 +1,4 @@
-use super::{Authors, Theme};
+use super::Theme;
 use crate::Config;
 use anyhow::Result;
 use git2::{
@@ -30,8 +30,6 @@ impl Repo {
 
         let mut pages_git_file_info = HashMap::new();
         let mut posts_git_file_info = HashMap::new();
-
-        let mut authors = Authors::new();
 
         let mut status_map = HashMap::new();
 
@@ -114,7 +112,7 @@ impl Repo {
                                 });
 
                                 info.set(
-                                    authors.get_author_id(commit.author().name()),
+                                    commit.author().name(),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );
@@ -126,7 +124,7 @@ impl Repo {
                                     });
 
                                 info.set(
-                                    authors.get_author_id(commit.author().name()),
+                                    commit.author().name(),
                                     commit.time().seconds()
                                         + commit.time().offset_minutes() as i64 * 60,
                                 );
@@ -195,7 +193,6 @@ impl Repo {
             theme: Theme::new(),
             pages_git_file_info,
             posts_git_file_info,
-            authors,
         })
     }
 
@@ -249,12 +246,11 @@ pub struct ParsedGitRepo {
     pub theme: Theme,
     pub posts_git_file_info: HashMap<PathBuf, GitFileInfo>,
     pub pages_git_file_info: HashMap<PathBuf, GitFileInfo>,
-    pub authors: Authors,
 }
 
 #[derive(Debug, Clone)]
 pub struct GitFileInfo {
-    pub author: Option<usize>,
+    pub author: Option<String>,
     pub create_time: Option<i64>,
     pub modify_time: i64,
 }
@@ -268,8 +264,8 @@ impl GitFileInfo {
         }
     }
 
-    fn set(&mut self, author: Option<usize>, create_time: i64) {
-        self.author = author;
+    fn set(&mut self, author: Option<&str>, create_time: i64) {
+        self.author = author.map(|a| a.to_owned());
         self.create_time = Some(create_time);
     }
 }
