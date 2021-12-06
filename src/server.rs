@@ -8,7 +8,7 @@ use std::{convert::Infallible, net::SocketAddr};
 
 pub async fn start() -> Result<()> {
     let service = make_service_fn(move |_| {
-        let service = service_fn(move |req| RouteTable::route(req));
+        let service = service_fn(RouteTable::route);
         async move { Ok::<_, Infallible>(service) }
     });
 

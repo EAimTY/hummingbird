@@ -1,4 +1,4 @@
-use super::{data_type::DataType, git::GitFileInfo};
+use super::git::GitFileInfo;
 use crate::{Config, RouteTable};
 use anyhow::Result;
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -56,8 +56,8 @@ impl Pages {
         Ok(Self { data })
     }
 
-    pub fn get(&self, id: usize) -> Option<DataType> {
-        self.data.get(id).map(|page| DataType::Page(page))
+    pub fn get(&self, id: usize) -> &Page {
+        &self.data[id]
     }
 }
 
