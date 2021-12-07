@@ -19,7 +19,7 @@ impl Authors {
                 let author = authors
                     .entry(page.author.as_ref().unwrap().clone())
                     .or_insert(AuthorInfo::new());
-                author.pages_id.push(idx);
+                author.page_ids.push(idx);
             });
 
         posts
@@ -31,28 +31,30 @@ impl Authors {
                 let author = authors
                     .entry(post.author.as_ref().unwrap().clone())
                     .or_insert(AuthorInfo::new());
-                author.posts_id.push(idx);
+                author.post_ids.push(idx);
             });
 
         Self { authors }
     }
 
-    pub fn get_posts(&self, author: &str) -> &[usize] {
-        &self.authors.get(author).unwrap().posts_id
+    pub fn get_posts(&self, author: &str) -> Option<&[usize]> {
+        self.authors
+            .get(author)
+            .map(|author| author.post_ids.as_slice())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct AuthorInfo {
-    pub posts_id: Vec<usize>,
-    pub pages_id: Vec<usize>,
+    pub post_ids: Vec<usize>,
+    pub page_ids: Vec<usize>,
 }
 
 impl AuthorInfo {
     pub fn new() -> Self {
         Self {
-            posts_id: Vec::new(),
-            pages_id: Vec::new(),
+            post_ids: Vec::new(),
+            page_ids: Vec::new(),
         }
     }
 }
