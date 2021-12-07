@@ -1,3 +1,4 @@
+mod archive;
 mod author;
 mod index;
 mod not_found;

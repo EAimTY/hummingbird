@@ -6,6 +6,7 @@ use once_cell::sync::OnceCell;
 use std::{collections::HashMap, convert::Infallible};
 use tokio::sync::RwLock;
 
+mod archive;
 mod author;
 mod index;
 mod not_found;
@@ -49,7 +50,16 @@ impl PathMap {
 impl RouteTable {
     pub fn init() -> Result<()> {
         let mut path_trie = PathTrie::new();
+
         path_trie.insert(&Config::read().url_patterns.author_url, RouteType::Author)?;
+        path_trie.insert(
+            &Config::read().url_patterns.archive_by_year_url,
+            RouteType::ArchiveByYear,
+        )?;
+        path_trie.insert(
+            &Config::read().url_patterns.archive_by_year_and_month_url,
+            RouteType::ArchiveByYearAndMonth,
+        )?;
 
         ROUTE_TABLE
             .set(Self {
@@ -93,8 +103,17 @@ impl RouteTable {
         match route_table.path_trie.at(req.uri().path()) {
             Ok(matched) => match matched.value {
                 RouteType::Author => {
-                    let author = matched.params.get("author").unwrap_or("");
+                    let author = matched.params.get("author").unwrap();
+
                     if let Some(res) = author::handle(&req, author).await {
+                        return Ok(res);
+                    }
+                }
+                RouteType::ArchiveByYear | RouteType::ArchiveByYearAndMonth => {
+                    let year = matched.params.get("year").unwrap();
+                    let month = matched.params.get("month");
+
+                    if let Some(res) = archive::handle(&req, year, month).await {
                         return Ok(res);
                     }
                 }
@@ -176,4 +195,6 @@ pub enum RouteType {
     Index,
     Update,
     Author,
+    ArchiveByYear,
+    ArchiveByYearAndMonth,
 }
