@@ -60,6 +60,10 @@ impl Posts {
         &self.data[id]
     }
 
+    pub fn get_multi(&self, id: &[usize]) -> Vec<&Post> {
+        id.iter().map(|id| &self.data[*id]).collect()
+    }
+
     pub fn get_index(&self) -> Vec<&Post> {
         if Config::read().settings.index_posts_from_old_to_new {
             self.data

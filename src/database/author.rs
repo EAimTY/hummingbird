@@ -36,6 +36,10 @@ impl Authors {
 
         Self { authors }
     }
+
+    pub fn get_posts(&self, author: &str) -> &[usize] {
+        &self.authors.get(author).unwrap().posts_id
+    }
 }
 
 #[derive(Debug, Clone)]
