@@ -1,6 +1,8 @@
 use self::git::ParsedGitRepo;
-use crate::RouteTable;
+use crate::{Config, RouteTable};
 use anyhow::{anyhow, Error, Result};
+use chrono::{DateTime, TimeZone};
+use chrono_tz::Tz;
 use once_cell::sync::OnceCell;
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
@@ -103,4 +105,91 @@ pub enum DatabaseUpdateResult {
     Success,
     PermissionDenied,
     Error(Error),
+}
+
+pub enum TimeRange {
+    Year {
+        year: i32,
+        from: DateTime<Tz>,
+        to: DateTime<Tz>,
+    },
+    Month {
+        year: i32,
+        month: u32,
+        from: DateTime<Tz>,
+        to: DateTime<Tz>,
+    },
+}
+
+impl TimeRange {
+    pub fn parse(year: &str, month: Option<&str>) -> Option<Self> {
+        let tz = &Config::read().settings.timezone;
+
+        let year = if let Ok(year) = year.parse() {
+            year
+        } else {
+            return None;
+        };
+
+        if let Some(month) = month {
+            let month = if let Ok(month) = month.parse() {
+                month
+            } else {
+                return None;
+            };
+
+            let from = if let Some(date) = tz.ymd_opt(year, month, 1).single() {
+                date.and_hms(0, 0, 0)
+            } else {
+                return None;
+            };
+
+            let (to_year, to_month) = if month == 12 {
+                (year + 1, 1)
+            } else {
+                (year, month + 1)
+            };
+
+            let to = if let Some(date) = tz.ymd_opt(to_year, to_month, 1).single() {
+                date.and_hms(0, 0, 0)
+            } else {
+                return None;
+            };
+
+            return Some(Self::Month {
+                year,
+                month,
+                from,
+                to,
+            });
+        }
+
+        let from = if let Some(date) = tz.ymd_opt(year, 1, 1).single() {
+            date.and_hms(0, 0, 0)
+        } else {
+            return None;
+        };
+
+        let to = if let Some(date) = tz.ymd_opt(year + 1, 1, 1).single() {
+            date.and_hms(0, 0, 0)
+        } else {
+            return None;
+        };
+
+        Some(Self::Year { year, from, to })
+    }
+
+    pub fn from(&self) -> &DateTime<Tz> {
+        match self {
+            Self::Year { from, .. } => from,
+            Self::Month { from, .. } => from,
+        }
+    }
+
+    pub fn to(&self) -> &DateTime<Tz> {
+        match self {
+            Self::Year { to, .. } => to,
+            Self::Month { to, .. } => to,
+        }
+    }
 }
