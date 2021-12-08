@@ -124,15 +124,9 @@ impl Post {
         let create_time = tz.timestamp(create_time, 0);
         let modify_time = tz.timestamp(modify_time, 0);
 
-        let year = create_time
-            .with_timezone(&Config::read().settings.timezone)
-            .year()
-            .to_string();
+        let year = create_time.year().to_string();
 
-        let month = create_time
-            .with_timezone(&Config::read().settings.timezone)
-            .month()
-            .to_string();
+        let month = create_time.month().to_string();
 
         let path = url_regex_args
             .replace_all(
