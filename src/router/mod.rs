@@ -185,9 +185,8 @@ trait IgnoreConflict {
 impl IgnoreConflict for Result<(), InsertError> {
     fn ignore_conflict(self) -> Result<(), InsertError> {
         match self {
-            Ok(_) => Ok(()),
-            Err(InsertError::Conflict { .. }) => Ok(()),
-            Err(err) => Err(err),
+            Ok(_) | Err(InsertError::Conflict { .. }) => Ok(()),
+            err => err,
         }
     }
 }
