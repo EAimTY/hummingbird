@@ -12,6 +12,7 @@ mod index;
 mod not_found;
 mod page;
 mod post;
+mod search;
 mod update;
 
 static ROUTE_TABLE: OnceCell<RouteTable> = OnceCell::new();
@@ -81,6 +82,11 @@ impl PathMap {
             RouteType::Update,
         );
 
+        map.insert(
+            Config::read().url_patterns.search_url.to_owned(),
+            RouteType::Search,
+        );
+
         Self {
             map: RwLock::new(map),
         }
@@ -99,6 +105,11 @@ impl PathMap {
         map.insert(
             Config::read().url_patterns.update_url.to_owned(),
             RouteType::Update,
+        );
+
+        map.insert(
+            Config::read().url_patterns.search_url.to_owned(),
+            RouteType::Search,
         );
     }
 
@@ -138,6 +149,11 @@ impl PathMap {
             }
             Some(RouteType::Update) => {
                 if let Some(res) = update::handle(req).await {
+                    return Some(res);
+                }
+            }
+            Some(RouteType::Search) => {
+                if let Some(res) = search::handle(req).await {
                     return Some(res);
                 }
             }
@@ -243,4 +259,5 @@ pub enum RouteType {
     Update,
     Author,
     Archive,
+    Search,
 }
