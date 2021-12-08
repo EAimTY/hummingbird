@@ -1,7 +1,8 @@
 use super::git::GitFileInfo;
 use crate::{Config, RouteTable};
 use anyhow::Result;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, TimeZone};
+use chrono_tz::Tz;
 use regex::{Captures, Regex};
 use std::{
     cmp::Ordering,
@@ -67,8 +68,8 @@ pub struct Page {
     pub title: String,
     pub content: String,
     pub author: Option<String>,
-    pub create_time: DateTime<Utc>,
-    pub modify_time: DateTime<Utc>,
+    pub create_time: DateTime<Tz>,
+    pub modify_time: DateTime<Tz>,
 }
 
 impl Page {
@@ -80,8 +81,9 @@ impl Page {
         modify_time: i64,
         url_regex_args: &Regex,
     ) -> Self {
-        let create_time = DateTime::from_utc(NaiveDateTime::from_timestamp(create_time, 0), Utc);
-        let modify_time = DateTime::from_utc(NaiveDateTime::from_timestamp(modify_time, 0), Utc);
+        let tz = &Config::read().settings.timezone;
+        let create_time = tz.timestamp(create_time, 0);
+        let modify_time = tz.timestamp(modify_time, 0);
 
         let path = url_regex_args
             .replace_all(

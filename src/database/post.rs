@@ -1,7 +1,8 @@
-use super::git::GitFileInfo;
+use super::{git::GitFileInfo, TimeRange};
 use crate::{Config, RouteTable};
 use anyhow::Result;
-use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
+use chrono::{DateTime, Datelike, TimeZone};
+use chrono_tz::Tz;
 use regex::{Captures, Regex};
 use std::{
     cmp::Ordering,
@@ -64,6 +65,18 @@ impl Posts {
         id.iter().map(|id| &self.data[*id]).collect()
     }
 
+    pub fn get_time_range(&self, time_range: &TimeRange) -> Vec<&Post> {
+        let from = self
+            .data
+            .partition_point(|post| &post.create_time < time_range.from());
+
+        let to = self
+            .data
+            .partition_point(|post| &post.create_time <= time_range.to());
+
+        self.data[from..to].iter().collect()
+    }
+
     pub fn get_index(&self) -> Vec<&Post> {
         if Config::read().settings.index_posts_from_old_to_new {
             self.data
@@ -86,8 +99,8 @@ pub struct Post {
     pub title: String,
     pub content: String,
     pub author: Option<String>,
-    pub create_time: DateTime<Utc>,
-    pub modify_time: DateTime<Utc>,
+    pub create_time: DateTime<Tz>,
+    pub modify_time: DateTime<Tz>,
 }
 
 impl Post {
@@ -99,8 +112,9 @@ impl Post {
         modify_time: i64,
         url_regex_args: &Regex,
     ) -> Self {
-        let create_time = DateTime::from_utc(NaiveDateTime::from_timestamp(create_time, 0), Utc);
-        let modify_time = DateTime::from_utc(NaiveDateTime::from_timestamp(modify_time, 0), Utc);
+        let tz = &Config::read().settings.timezone;
+        let create_time = tz.timestamp(create_time, 0);
+        let modify_time = tz.timestamp(modify_time, 0);
 
         let year = create_time
             .with_timezone(&Config::read().settings.timezone)

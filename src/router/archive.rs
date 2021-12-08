@@ -1,4 +1,4 @@
-use crate::DatabaseManager;
+use crate::{database::TimeRange, DatabaseManager};
 use hyper::{Body, Method, Request, Response};
 
 pub async fn handle(
@@ -9,8 +9,12 @@ pub async fn handle(
     if req.method() == Method::GET {
         let db = DatabaseManager::read().await;
 
-        let res = db.theme.render_archive();
-        return Some(res);
+        if let Some(time_range) = TimeRange::parse(year, month) {
+            let posts = db.posts.get_time_range(&time_range);
+
+            let res = db.theme.render_archive(time_range, posts);
+            return Some(res);
+        }
     }
     None
 }
