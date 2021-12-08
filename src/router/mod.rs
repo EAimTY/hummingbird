@@ -17,16 +17,16 @@ mod update;
 static ROUTE_TABLE: OnceCell<RouteTable> = OnceCell::new();
 
 pub struct RouteTable {
-    path_map: RwLock<PathMap>,
-    path_trie: PathTrie,
+    map: PathMap,
+    tree: PathTree,
 }
 
 impl RouteTable {
     pub fn init() -> Result<()> {
         ROUTE_TABLE
             .set(Self {
-                path_map: RwLock::new(PathMap::init()?),
-                path_trie: PathTrie::init()?,
+                map: PathMap::init(),
+                tree: PathTree::init()?,
             })
             .map_err(|_| anyhow!("Failed to initialize route table"))?;
 
@@ -36,63 +36,39 @@ impl RouteTable {
     pub async fn route(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
         let route_table = ROUTE_TABLE.get().unwrap();
 
-        if let Some(res) = route_table
-            .path_map
-            .read()
-            .await
-            .match_pattern(&mut req)
-            .await
-        {
+        if let Some(res) = route_table.map.match_pattern(&mut req).await {
             return Ok(res);
         }
 
-        if let Some(res) = route_table.path_trie.match_pattern(&req).await {
+        if let Some(res) = route_table.tree.match_pattern(&req).await {
             return Ok(res);
         }
 
         Ok(not_found::handle(&req).await)
     }
 
-    pub async fn clear_path_map() -> Result<()> {
+    pub async fn clear() {
         let route_table = ROUTE_TABLE.get().unwrap();
-        let mut path_map = route_table.path_map.write().await;
-
-        *path_map = PathMap::init()?;
-
-        Ok(())
+        route_table.map.clear().await;
     }
 
-    pub async fn update_page_map(page_map: HashMap<String, usize>) {
+    pub async fn update_pages(pages: HashMap<String, usize>) {
         let route_table = ROUTE_TABLE.get().unwrap();
-
-        let mut path_map = route_table.path_map.write().await;
-
-        path_map.map.extend(
-            page_map
-                .into_iter()
-                .map(|(path, id)| (path, RouteType::Page { id })),
-        );
+        route_table.map.update_pages(pages).await;
     }
 
-    pub async fn update_post_map(post_map: HashMap<String, usize>) {
+    pub async fn update_posts(posts: HashMap<String, usize>) {
         let route_table = ROUTE_TABLE.get().unwrap();
-
-        let mut path_map = route_table.path_map.write().await;
-
-        path_map.map.extend(
-            post_map
-                .into_iter()
-                .map(|(path, id)| (path, RouteType::Post { id })),
-        );
+        route_table.map.update_posts(posts).await;
     }
 }
 
 pub struct PathMap {
-    pub map: HashMap<String, RouteType>,
+    pub map: RwLock<HashMap<String, RouteType>>,
 }
 
 impl PathMap {
-    pub fn init() -> Result<Self> {
+    fn init() -> Self {
         let mut map = HashMap::new();
 
         map.insert(
@@ -105,16 +81,54 @@ impl PathMap {
             RouteType::Update,
         );
 
-        Ok(Self { map })
+        Self {
+            map: RwLock::new(map),
+        }
     }
 
-    pub async fn match_pattern(&self, req: &mut Request<Body>) -> Option<Response<Body>> {
-        let path = req.uri().path();
+    async fn clear(&self) {
+        let mut map = self.map.write().await;
 
-        let matched = self
-            .map
+        map.clear();
+
+        map.insert(
+            Config::read().url_patterns.index_url.to_owned(),
+            RouteType::Index,
+        );
+
+        map.insert(
+            Config::read().url_patterns.update_url.to_owned(),
+            RouteType::Update,
+        );
+    }
+
+    async fn update_pages(&self, pages: HashMap<String, usize>) {
+        let mut map = self.map.write().await;
+
+        map.extend(
+            pages
+                .into_iter()
+                .map(|(path, id)| (path, RouteType::Page { id })),
+        );
+    }
+
+    async fn update_posts(&self, posts: HashMap<String, usize>) {
+        let mut map = self.map.write().await;
+
+        map.extend(
+            posts
+                .into_iter()
+                .map(|(path, id)| (path, RouteType::Post { id })),
+        );
+    }
+
+    async fn match_pattern(&self, req: &mut Request<Body>) -> Option<Response<Body>> {
+        let path = req.uri().path();
+        let map = self.map.read().await;
+
+        let matched = map
             .get(path)
-            .map_or_else(|| self.map.get(&switch_trailing_slash(path)), |matched| Some(matched));
+            .map_or_else(|| map.get(&switch_trailing_slash(path)), Some);
 
         match matched {
             Some(RouteType::Index) => {
@@ -144,12 +158,12 @@ impl PathMap {
     }
 }
 
-pub struct PathTrie {
+pub struct PathTree {
     pub matcher: Node<RouteType>,
 }
 
-impl PathTrie {
-    pub fn init() -> Result<Self> {
+impl PathTree {
+    fn init() -> Result<Self> {
         let mut matcher = Node::new();
 
         let author_url = &Config::read().url_patterns.author_url;
@@ -158,17 +172,23 @@ impl PathTrie {
 
         let archive_by_year_url = &Config::read().url_patterns.archive_by_year_url;
         matcher.insert(archive_by_year_url, RouteType::Archive)?;
-        matcher.insert(switch_trailing_slash(archive_by_year_url), RouteType::Archive)?;
+        matcher.insert(
+            switch_trailing_slash(archive_by_year_url),
+            RouteType::Archive,
+        )?;
 
         let archive_by_year_and_month_url =
             &Config::read().url_patterns.archive_by_year_and_month_url;
         matcher.insert(archive_by_year_and_month_url, RouteType::Archive)?;
-        matcher.insert(switch_trailing_slash(archive_by_year_and_month_url), RouteType::Archive)?;
+        matcher.insert(
+            switch_trailing_slash(archive_by_year_and_month_url),
+            RouteType::Archive,
+        )?;
 
         Ok(Self { matcher })
     }
 
-    pub async fn match_pattern(&self, req: &Request<Body>) -> Option<Response<Body>> {
+    async fn match_pattern(&self, req: &Request<Body>) -> Option<Response<Body>> {
         if let Ok(matched) = self.matcher.at(req.uri().path()) {
             match matched.value {
                 RouteType::Author => {
