@@ -4,6 +4,7 @@ mod index;
 mod not_found;
 mod page;
 mod post;
+mod search;
 mod update;
 
 #[derive(Clone, Debug)]

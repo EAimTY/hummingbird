@@ -65,7 +65,7 @@ impl Posts {
         id.iter().map(|id| &self.data[*id]).collect()
     }
 
-    pub fn get_time_range(&self, time_range: &TimeRange) -> Vec<&Post> {
+    pub fn get_time_range(&self, time_range: &TimeRange) -> Option<Vec<&Post>> {
         let from = self
             .data
             .partition_point(|post| &post.create_time < time_range.from());
@@ -74,7 +74,11 @@ impl Posts {
             .data
             .partition_point(|post| &post.create_time <= time_range.to());
 
-        self.data[from..to].iter().collect()
+        if from != to {
+            Some(self.data[from..to].iter().collect())
+        } else {
+            None
+        }
     }
 
     pub fn get_index(&self) -> Vec<&Post> {
@@ -90,6 +94,10 @@ impl Posts {
                 .take(Config::read().settings.index_posts_count)
                 .collect()
         }
+    }
+
+    pub fn search(&self, _query: &str) -> Option<Vec<&Post>> {
+        todo!();
     }
 }
 
