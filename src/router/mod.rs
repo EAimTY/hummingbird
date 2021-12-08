@@ -1,7 +1,7 @@
 use crate::Config;
 use anyhow::{anyhow, Result};
 use hyper::{Body, Request, Response};
-use matchit::Node;
+use matchit::{InsertError, Node};
 use once_cell::sync::OnceCell;
 use std::{collections::HashMap, convert::Infallible};
 use tokio::sync::RwLock;
@@ -162,6 +162,20 @@ pub struct PathTree {
     pub matcher: Node<RouteType>,
 }
 
+trait IgnoreConflict {
+    fn ignore_conflict(self) -> Result<(), InsertError>;
+}
+
+impl IgnoreConflict for Result<(), InsertError> {
+    fn ignore_conflict(self) -> Result<(), InsertError> {
+        match self {
+            Ok(_) => Ok(()),
+            Err(InsertError::Conflict { .. }) => Ok(()),
+            Err(err) => Err(err),
+        }
+    }
+}
+
 impl PathTree {
     fn init() -> Result<Self> {
         let mut matcher = Node::new();
@@ -170,20 +184,19 @@ impl PathTree {
         matcher.insert(author_url, RouteType::Author)?;
         matcher.insert(switch_trailing_slash(author_url), RouteType::Author)?;
 
-        let archive_by_year_url = &Config::read().url_patterns.archive_by_year_url;
-        matcher.insert(archive_by_year_url, RouteType::Archive)?;
-        matcher.insert(
-            switch_trailing_slash(archive_by_year_url),
-            RouteType::Archive,
-        )?;
-
-        let archive_by_year_and_month_url =
-            &Config::read().url_patterns.archive_by_year_and_month_url;
-        matcher.insert(archive_by_year_and_month_url, RouteType::Archive)?;
-        matcher.insert(
-            switch_trailing_slash(archive_by_year_and_month_url),
-            RouteType::Archive,
-        )?;
+        let archive_url = &Config::read().url_patterns.archive_url;
+        matcher.insert(archive_url, RouteType::Archive)?;
+        matcher.insert(switch_trailing_slash(archive_url), RouteType::Archive)?;
+        let archive_url = Config::read()
+            .url_patterns
+            .archive_url
+            .replace("/:month", "");
+        matcher
+            .insert(switch_trailing_slash(&archive_url), RouteType::Archive)
+            .ignore_conflict()?;
+        matcher
+            .insert(archive_url, RouteType::Archive)
+            .ignore_conflict()?;
 
         Ok(Self { matcher })
     }

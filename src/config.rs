@@ -38,8 +38,7 @@ pub struct UrlPatterns {
     pub page_url: String,
     pub post_url: String,
     pub author_url: String,
-    pub archive_by_year_url: String,
-    pub archive_by_year_and_month_url: String,
+    pub archive_url: String,
 }
 
 impl Config {
