@@ -46,13 +46,13 @@ impl Pages {
 
         let data = data.into_sorted_vec();
 
-        let path_map = data
+        let map = data
             .iter()
             .enumerate()
             .map(|(idx, page)| (page.path.to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
-        RouteTable::update_page_map(path_map).await;
+        RouteTable::update_pages(map).await;
 
         Ok(Self { data })
     }

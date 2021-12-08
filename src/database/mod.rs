@@ -60,7 +60,7 @@ impl Database {
             posts_git_file_info,
         } = self.repo.parse().await?;
 
-        RouteTable::clear_path_map().await?;
+        RouteTable::clear().await;
 
         self.theme = theme;
         self.pages =
@@ -125,24 +125,12 @@ impl TimeRange {
     pub fn parse(year: &str, month: Option<&str>) -> Option<Self> {
         let tz = &Config::read().settings.timezone;
 
-        let year = if let Ok(year) = year.parse() {
-            year
-        } else {
-            return None;
-        };
+        let year = year.parse().ok()?;
 
         if let Some(month) = month {
-            let month = if let Ok(month) = month.parse() {
-                month
-            } else {
-                return None;
-            };
+            let month = month.parse().ok()?;
 
-            let from = if let Some(date) = tz.ymd_opt(year, month, 1).single() {
-                date.and_hms(0, 0, 0)
-            } else {
-                return None;
-            };
+            let from = tz.ymd_opt(year, month, 1).single()?.and_hms(0, 0, 0);
 
             let (to_year, to_month) = if month == 12 {
                 (year + 1, 1)
@@ -150,11 +138,7 @@ impl TimeRange {
                 (year, month + 1)
             };
 
-            let to = if let Some(date) = tz.ymd_opt(to_year, to_month, 1).single() {
-                date.and_hms(0, 0, 0)
-            } else {
-                return None;
-            };
+            let to = tz.ymd_opt(to_year, to_month, 1).single()?.and_hms(0, 0, 0);
 
             return Some(Self::Month {
                 year,
@@ -164,17 +148,8 @@ impl TimeRange {
             });
         }
 
-        let from = if let Some(date) = tz.ymd_opt(year, 1, 1).single() {
-            date.and_hms(0, 0, 0)
-        } else {
-            return None;
-        };
-
-        let to = if let Some(date) = tz.ymd_opt(year + 1, 1, 1).single() {
-            date.and_hms(0, 0, 0)
-        } else {
-            return None;
-        };
+        let from = tz.ymd_opt(year, 1, 1).single()?.and_hms(0, 0, 0);
+        let to = tz.ymd_opt(year + 1, 1, 1).single()?.and_hms(0, 0, 0);
 
         Some(Self::Year { year, from, to })
     }

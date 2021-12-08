@@ -18,7 +18,7 @@ impl Authors {
             .for_each(|(idx, page)| {
                 let author = authors
                     .entry(page.author.as_ref().unwrap().clone())
-                    .or_insert(AuthorInfo::new());
+                    .or_insert_with(AuthorInfo::new);
                 author.page_ids.push(idx);
             });
 
@@ -30,7 +30,7 @@ impl Authors {
             .for_each(|(idx, post)| {
                 let author = authors
                     .entry(post.author.as_ref().unwrap().clone())
-                    .or_insert(AuthorInfo::new());
+                    .or_insert_with(AuthorInfo::new);
                 author.post_ids.push(idx);
             });
 
@@ -51,6 +51,7 @@ pub struct AuthorInfo {
 }
 
 impl AuthorInfo {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             post_ids: Vec::new(),
