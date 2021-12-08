@@ -1,7 +1,7 @@
 use crate::Config;
 use anyhow::{anyhow, Result};
-use hyper::{http::uri::PathAndQuery, Body, Request, Response, Uri};
-use matchit::Node as PathTrie;
+use hyper::{Body, Request, Response};
+use matchit::Node;
 use once_cell::sync::OnceCell;
 use std::{collections::HashMap, convert::Infallible};
 use tokio::sync::RwLock;
@@ -18,7 +18,73 @@ static ROUTE_TABLE: OnceCell<RouteTable> = OnceCell::new();
 
 pub struct RouteTable {
     path_map: RwLock<PathMap>,
-    path_trie: PathTrie<RouteType>,
+    path_trie: PathTrie,
+}
+
+impl RouteTable {
+    pub fn init() -> Result<()> {
+        ROUTE_TABLE
+            .set(Self {
+                path_map: RwLock::new(PathMap::init()?),
+                path_trie: PathTrie::init()?,
+            })
+            .map_err(|_| anyhow!("Failed to initialize route table"))?;
+
+        Ok(())
+    }
+
+    pub async fn route(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
+        let route_table = ROUTE_TABLE.get().unwrap();
+
+        if let Some(res) = route_table
+            .path_map
+            .read()
+            .await
+            .match_pattern(&mut req)
+            .await
+        {
+            return Ok(res);
+        }
+
+        if let Some(res) = route_table.path_trie.match_pattern(&req).await {
+            return Ok(res);
+        }
+
+        Ok(not_found::handle(&req).await)
+    }
+
+    pub async fn clear_path_map() -> Result<()> {
+        let route_table = ROUTE_TABLE.get().unwrap();
+        let mut path_map = route_table.path_map.write().await;
+
+        *path_map = PathMap::init()?;
+
+        Ok(())
+    }
+
+    pub async fn update_page_map(page_map: HashMap<String, usize>) {
+        let route_table = ROUTE_TABLE.get().unwrap();
+
+        let mut path_map = route_table.path_map.write().await;
+
+        path_map.map.extend(
+            page_map
+                .into_iter()
+                .map(|(path, id)| (path, RouteType::Page { id })),
+        );
+    }
+
+    pub async fn update_post_map(post_map: HashMap<String, usize>) {
+        let route_table = ROUTE_TABLE.get().unwrap();
+
+        let mut path_map = route_table.path_map.write().await;
+
+        path_map.map.extend(
+            post_map
+                .into_iter()
+                .map(|(path, id)| (path, RouteType::Post { id })),
+        );
+    }
 }
 
 pub struct PathMap {
@@ -42,149 +108,97 @@ impl PathMap {
         Ok(Self { map })
     }
 
-    pub fn match_pattern(&self, path: &str) -> Option<RouteType> {
-        self.map.get(path).cloned()
-    }
-}
+    pub async fn match_pattern(&self, req: &mut Request<Body>) -> Option<Response<Body>> {
+        let path = req.uri().path();
 
-impl RouteTable {
-    pub fn init() -> Result<()> {
-        let mut path_trie = PathTrie::new();
+        let matched = self
+            .map
+            .get(path)
+            .map_or_else(|| self.map.get(&switch_trailing_slash(path)), |matched| Some(matched));
 
-        path_trie.insert(&Config::read().url_patterns.author_url, RouteType::Author)?;
-        path_trie.insert(
-            &Config::read().url_patterns.archive_by_year_url,
-            RouteType::ArchiveByYear,
-        )?;
-        path_trie.insert(
-            &Config::read().url_patterns.archive_by_year_and_month_url,
-            RouteType::ArchiveByYearAndMonth,
-        )?;
-
-        ROUTE_TABLE
-            .set(Self {
-                path_trie,
-                path_map: RwLock::new(PathMap::init()?),
-            })
-            .map_err(|_| anyhow!("Failed to initialize route table"))?;
-
-        Ok(())
-    }
-
-    pub async fn route(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
-        let route_table = ROUTE_TABLE.get().unwrap();
-
-        let path_map = route_table.path_map.read().await;
-
-        match path_map.match_pattern(req.uri().path()) {
+        match matched {
             Some(RouteType::Index) => {
-                if let Some(res) = index::handle(&req).await {
-                    return Ok(res);
+                if let Some(res) = index::handle(req).await {
+                    return Some(res);
                 }
             }
             Some(RouteType::Update) => {
-                if let Some(res) = update::handle(&mut req).await {
-                    return Ok(res);
+                if let Some(res) = update::handle(req).await {
+                    return Some(res);
                 }
             }
             Some(RouteType::Page { id: page_id }) => {
-                if let Some(res) = page::handle(&req, page_id).await {
-                    return Ok(res);
+                if let Some(res) = page::handle(req, *page_id).await {
+                    return Some(res);
                 }
             }
             Some(RouteType::Post { id: post_id }) => {
-                if let Some(res) = post::handle(&req, post_id).await {
-                    return Ok(res);
+                if let Some(res) = post::handle(req, *post_id).await {
+                    return Some(res);
                 }
             }
             _ => {}
         }
 
-        match route_table.path_trie.at(req.uri().path()) {
-            Ok(matched) => match matched.value {
+        None
+    }
+}
+
+pub struct PathTrie {
+    pub matcher: Node<RouteType>,
+}
+
+impl PathTrie {
+    pub fn init() -> Result<Self> {
+        let mut matcher = Node::new();
+
+        let author_url = &Config::read().url_patterns.author_url;
+        matcher.insert(author_url, RouteType::Author)?;
+        matcher.insert(switch_trailing_slash(author_url), RouteType::Author)?;
+
+        let archive_by_year_url = &Config::read().url_patterns.archive_by_year_url;
+        matcher.insert(archive_by_year_url, RouteType::Archive)?;
+        matcher.insert(switch_trailing_slash(archive_by_year_url), RouteType::Archive)?;
+
+        let archive_by_year_and_month_url =
+            &Config::read().url_patterns.archive_by_year_and_month_url;
+        matcher.insert(archive_by_year_and_month_url, RouteType::Archive)?;
+        matcher.insert(switch_trailing_slash(archive_by_year_and_month_url), RouteType::Archive)?;
+
+        Ok(Self { matcher })
+    }
+
+    pub async fn match_pattern(&self, req: &Request<Body>) -> Option<Response<Body>> {
+        if let Ok(matched) = self.matcher.at(req.uri().path()) {
+            match matched.value {
                 RouteType::Author => {
                     let author = matched.params.get("author").unwrap();
 
-                    if let Some(res) = author::handle(&req, author).await {
-                        return Ok(res);
+                    if let Some(res) = author::handle(req, author).await {
+                        return Some(res);
                     }
                 }
-                RouteType::ArchiveByYear | RouteType::ArchiveByYearAndMonth => {
+                RouteType::Archive => {
                     let year = matched.params.get("year").unwrap();
                     let month = matched.params.get("month");
 
-                    if let Some(res) = archive::handle(&req, year, month).await {
-                        return Ok(res);
+                    if let Some(res) = archive::handle(req, year, month).await {
+                        return Some(res);
                     }
                 }
                 _ => {}
-            },
-            Err(err) => {
-                if err.tsr() {
-                    return Ok(Self::tsr_redirect(req.uri()));
-                }
             }
         }
 
-        Ok(not_found::handle(&req).await)
+        None
     }
+}
 
-    fn tsr_redirect(uri: &Uri) -> Response<Body> {
-        let redirect_uri = {
-            let uri = uri.clone();
-            let mut parts = uri.into_parts();
-
-            if let Some(p_and_q) = parts.path_and_query {
-                let new_path = if p_and_q.path().ends_with('/') {
-                    p_and_q.path()[..p_and_q.path().len() - 1].to_owned()
-                } else {
-                    format!("{}/", p_and_q.path())
-                };
-
-                let new_p_and_q = p_and_q
-                    .as_str()
-                    .replace(p_and_q.path(), &new_path)
-                    .into_bytes();
-                parts.path_and_query = PathAndQuery::from_maybe_shared(new_p_and_q).ok();
-            }
-
-            Uri::from_parts(parts).unwrap().to_string()
-        };
-
-        Response::builder()
-            .status(301)
-            .header("Location", redirect_uri)
-            .body(Body::empty())
-            .unwrap()
-    }
-
-    pub async fn clear_path_map() -> Result<()> {
-        let route_table = ROUTE_TABLE.get().unwrap();
-        let mut path_map = route_table.path_map.write().await;
-
-        *path_map = PathMap::init()?;
-
-        Ok(())
-    }
-
-    pub async fn update_page_map(page_map: HashMap<String, usize>) {
-        let route_table = ROUTE_TABLE.get().unwrap();
-        let mut path_map = route_table.path_map.write().await;
-        path_map.map.extend(
-            page_map
-                .into_iter()
-                .map(|(path, id)| (path, RouteType::Page { id })),
-        );
-    }
-
-    pub async fn update_post_map(post_map: HashMap<String, usize>) {
-        let route_table = ROUTE_TABLE.get().unwrap();
-        let mut path_map = route_table.path_map.write().await;
-        path_map.map.extend(
-            post_map
-                .into_iter()
-                .map(|(path, id)| (path, RouteType::Post { id })),
-        );
+fn switch_trailing_slash(path: &str) -> String {
+    if path.ends_with('/') {
+        path[..path.len() - 2].to_owned()
+    } else {
+        format!("{}/", path)
     }
 }
 
@@ -195,6 +209,5 @@ pub enum RouteType {
     Index,
     Update,
     Author,
-    ArchiveByYear,
-    ArchiveByYearAndMonth,
+    Archive,
 }
