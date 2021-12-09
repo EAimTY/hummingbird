@@ -10,7 +10,7 @@ pub use self::{
     author::Authors,
     git::Repo,
     page::{Page, Pages},
-    post::{Post, Posts},
+    post::{Post, PostFilter, Posts},
     theme::Theme,
 };
 
@@ -119,10 +119,14 @@ pub enum TimeRange {
         from: DateTime<Tz>,
         to: DateTime<Tz>,
     },
+    Free {
+        from: DateTime<Tz>,
+        to: DateTime<Tz>,
+    },
 }
 
 impl TimeRange {
-    pub fn parse(year: &str, month: Option<&str>) -> Option<Self> {
+    pub fn from_year_month(year: &str, month: Option<&str>) -> Option<Self> {
         let tz = &Config::read().settings.timezone;
 
         let year = year.parse().ok()?;
@@ -154,10 +158,24 @@ impl TimeRange {
         Some(Self::Year { year, from, to })
     }
 
+    pub fn from_timestamps(from: i64, to: i64) -> Option<Self> {
+        if from > to {
+            return None;
+        }
+
+        let tz = &Config::read().settings.timezone;
+
+        let from = tz.timestamp_opt(from, 0).single()?;
+        let to = tz.timestamp_opt(to, 0).single()?;
+
+        Some(Self::Free { from, to })
+    }
+
     pub fn from(&self) -> &DateTime<Tz> {
         match self {
             Self::Year { from, .. } => from,
             Self::Month { from, .. } => from,
+            Self::Free { from, .. } => from,
         }
     }
 
@@ -165,6 +183,7 @@ impl TimeRange {
         match self {
             Self::Year { to, .. } => to,
             Self::Month { to, .. } => to,
+            Self::Free { to, .. } => to,
         }
     }
 }

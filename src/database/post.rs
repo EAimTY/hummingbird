@@ -96,8 +96,39 @@ impl Posts {
         }
     }
 
-    pub fn search(&self, _query: &str) -> Option<Vec<&Post>> {
-        todo!();
+    pub fn filter(&self, filters: &[PostFilter]) -> Option<Vec<&Post>> {
+        let mut res: Box<dyn Iterator<Item = &Post>> = Box::new(self.data.iter());
+
+        for filter in filters {
+            res = match filter {
+                PostFilter::Keyword(keyword) => {
+                    let filter = move |post: &&Post| post.title.contains(keyword);
+                    Box::new(res.filter(filter))
+                }
+                PostFilter::TimeRange(time_range) => {
+                    let filter = move |post: &&Post| {
+                        &post.create_time >= time_range.from()
+                            && &post.create_time <= time_range.to()
+                    };
+                    Box::new(res.filter(filter))
+                }
+                PostFilter::Author(author) => {
+                    let filter = move |post: &&Post| match &post.author {
+                        Some(post_author) => post_author == author,
+                        None => false,
+                    };
+                    Box::new(res.filter(filter))
+                }
+            }
+        }
+
+        let res = res.collect::<Vec<_>>();
+
+        if !res.is_empty() {
+            Some(res)
+        } else {
+            None
+        }
     }
 }
 
@@ -163,5 +194,39 @@ impl Ord for Post {
 impl PartialOrd for Post {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+pub enum PostFilter<'f> {
+    Keyword(&'f str),
+    TimeRange(TimeRange),
+    Author(&'f str),
+}
+
+impl<'f> PostFilter<'f> {
+    pub fn from_uri_query(query: &'f str) -> Option<Vec<Self>> {
+        let filters = query
+            .split('&')
+            .filter_map(|part| {
+                let (key, value) = part.split_once('=')?;
+
+                match key {
+                    "keyword" => Some(Self::Keyword(value)),
+                    "time_range" => {
+                        let (from, to) = part.split_once('-')?;
+                        let (from, to) = (from.parse().ok()?, to.parse().ok()?);
+                        Some(Self::TimeRange(TimeRange::from_timestamps(from, to)?))
+                    }
+                    "author" => Some(Self::Author(value)),
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if !filters.is_empty() {
+            Some(filters)
+        } else {
+            None
+        }
     }
 }
