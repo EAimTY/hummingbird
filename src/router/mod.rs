@@ -34,15 +34,38 @@ impl RouteTable {
         Ok(())
     }
 
+    async fn match_pattern(&self, path: &str, req: &Request<Body>) -> Option<Response<Body>> {
+        if let Some(res) = self.map.match_pattern(path, &req).await {
+            return Some(res);
+        }
+
+        if let Some(res) = self.tree.match_pattern(path, &req).await {
+            return Some(res);
+        }
+
+        None
+    }
+
     pub async fn route(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
         let route_table = ROUTE_TABLE.get().unwrap();
+        let path = req.uri().path();
 
-        if let Some(res) = route_table.map.match_pattern(&mut req).await {
+        if let Some(res) = route_table.match_pattern(path, &req).await {
             return Ok(res);
         }
 
-        if let Some(res) = route_table.tree.match_pattern(&req).await {
-            return Ok(res);
+        if path == "/" {
+            let path = &Config::read().site.homepage;
+
+            if let Some(res) = route_table.match_pattern(path, &req).await {
+                return Ok(res);
+            }
+        }
+
+        if path == &Config::read().url_patterns.update {
+            if let Some(res) = update::handle(&mut req).await {
+                return Ok(res);
+            }
         }
 
         Ok(not_found::handle(&req).await)
@@ -73,17 +96,12 @@ impl PathMap {
         let mut map = HashMap::new();
 
         map.insert(
-            Config::read().url_patterns.index_url.to_owned(),
+            Config::read().url_patterns.index.to_owned(),
             RouteType::Index,
         );
 
         map.insert(
-            Config::read().url_patterns.update_url.to_owned(),
-            RouteType::Update,
-        );
-
-        map.insert(
-            Config::read().url_patterns.search_url.to_owned(),
+            Config::read().url_patterns.search.to_owned(),
             RouteType::Search,
         );
 
@@ -98,17 +116,12 @@ impl PathMap {
         map.clear();
 
         map.insert(
-            Config::read().url_patterns.index_url.to_owned(),
+            Config::read().url_patterns.index.to_owned(),
             RouteType::Index,
         );
 
         map.insert(
-            Config::read().url_patterns.update_url.to_owned(),
-            RouteType::Update,
-        );
-
-        map.insert(
-            Config::read().url_patterns.search_url.to_owned(),
+            Config::read().url_patterns.search.to_owned(),
             RouteType::Search,
         );
     }
@@ -133,8 +146,7 @@ impl PathMap {
         );
     }
 
-    async fn match_pattern(&self, req: &mut Request<Body>) -> Option<Response<Body>> {
-        let path = req.uri().path();
+    async fn match_pattern(&self, path: &str, req: &Request<Body>) -> Option<Response<Body>> {
         let map = self.map.read().await;
 
         let matched = map
@@ -144,11 +156,6 @@ impl PathMap {
         match matched {
             Some(RouteType::Index) => {
                 if let Some(res) = index::handle(req).await {
-                    return Some(res);
-                }
-            }
-            Some(RouteType::Update) => {
-                if let Some(res) = update::handle(req).await {
                     return Some(res);
                 }
             }
@@ -195,17 +202,14 @@ impl PathTree {
     fn init() -> Result<Self> {
         let mut matcher = Node::new();
 
-        let author_url = &Config::read().url_patterns.author_url;
+        let author_url = &Config::read().url_patterns.author;
         matcher.insert(author_url, RouteType::Author)?;
         matcher.insert(switch_trailing_slash(author_url), RouteType::Author)?;
 
-        let archive_url = &Config::read().url_patterns.archive_url;
+        let archive_url = &Config::read().url_patterns.archive;
         matcher.insert(archive_url, RouteType::Archive)?;
         matcher.insert(switch_trailing_slash(archive_url), RouteType::Archive)?;
-        let archive_url = Config::read()
-            .url_patterns
-            .archive_url
-            .replace("/:month", "");
+        let archive_url = Config::read().url_patterns.archive.replace("/:month", "");
         matcher
             .insert(switch_trailing_slash(&archive_url), RouteType::Archive)
             .ignore_conflict()?;
@@ -216,8 +220,8 @@ impl PathTree {
         Ok(Self { matcher })
     }
 
-    async fn match_pattern(&self, req: &Request<Body>) -> Option<Response<Body>> {
-        if let Ok(matched) = self.matcher.at(req.uri().path()) {
+    async fn match_pattern(&self, path: &str, req: &Request<Body>) -> Option<Response<Body>> {
+        if let Ok(matched) = self.matcher.at(path) {
             match matched.value {
                 RouteType::Author => {
                     let author = matched.params.get("author").unwrap();
@@ -255,7 +259,6 @@ pub enum RouteType {
     Post { id: usize },
     Page { id: usize },
     Index,
-    Update,
     Author,
     Archive,
     Search,

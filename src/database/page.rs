@@ -87,7 +87,7 @@ impl Page {
 
         let path = url_regex_args
             .replace_all(
-                &Config::read().url_patterns.page_url,
+                &Config::read().url_patterns.page,
                 |cap: &Captures| match &cap[0] {
                     ":slug" => &title,
                     _ => unreachable!(),
