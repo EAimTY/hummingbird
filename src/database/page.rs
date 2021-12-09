@@ -81,7 +81,7 @@ impl Page {
         modify_time: i64,
         url_regex_args: &Regex,
     ) -> Self {
-        let tz = &Config::read().settings.timezone;
+        let tz = &Config::read().application.timezone;
         let create_time = tz.timestamp(create_time, 0);
         let modify_time = tz.timestamp(modify_time, 0);
 
