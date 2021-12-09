@@ -1,9 +1,9 @@
 use super::Theme;
-use crate::database::Post;
+use crate::database::{Post, PostFilter};
 use hyper::{Body, Response};
 
 impl Theme {
-    pub fn render_search(&self, result: Vec<&Post>) -> Response<Body> {
+    pub fn render_search(&self, _filters: Vec<PostFilter>, result: Vec<&Post>) -> Response<Body> {
         Response::new(Body::from(
             result
                 .into_iter()

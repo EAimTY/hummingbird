@@ -7,6 +7,7 @@ impl Theme {
         let time_range = match time_range {
             TimeRange::Year { year, .. } => year.to_string(),
             TimeRange::Month { year, month, .. } => format!("{}-{}", year, month),
+            TimeRange::Free { .. } => unreachable!(),
         };
 
         Response::new(Body::from(format!(
