@@ -7,7 +7,7 @@ use hyper::{
 pub async fn handle(req: &mut Request<Body>) -> Option<Response<Body>> {
     let mut update = false;
 
-    if let Some(update_token) = &Config::read().settings.update_token {
+    if let Some(update_token) = &Config::read().application.update_token {
         if req.method() == Method::POST {
             if let Ok(body) = body::aggregate(req.body_mut()).await {
                 if update_token.as_bytes() == body.chunk() {

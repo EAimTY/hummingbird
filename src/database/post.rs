@@ -82,16 +82,16 @@ impl Posts {
     }
 
     pub fn get_index(&self) -> Vec<&Post> {
-        if Config::read().settings.index_posts_from_old_to_new {
+        if Config::read().site.index_posts_from_old_to_new {
             self.data
                 .iter()
-                .take(Config::read().settings.index_posts_count)
+                .take(Config::read().site.index_posts_count)
                 .collect()
         } else {
             self.data
                 .iter()
                 .rev()
-                .take(Config::read().settings.index_posts_count)
+                .take(Config::read().site.index_posts_count)
                 .collect()
         }
     }
@@ -102,7 +102,9 @@ impl Posts {
         for filter in filters {
             res = match filter {
                 PostFilter::Keyword(keyword) => {
-                    let filter = move |post: &&Post| post.title.contains(keyword);
+                    let filter = move |post: &&Post| {
+                        post.title.contains(keyword) || post.content.contains(keyword)
+                    };
                     Box::new(res.filter(filter))
                 }
                 PostFilter::TimeRange(time_range) => {
@@ -151,7 +153,7 @@ impl Post {
         modify_time: i64,
         url_regex_args: &Regex,
     ) -> Self {
-        let tz = &Config::read().settings.timezone;
+        let tz = &Config::read().application.timezone;
         let create_time = tz.timestamp(create_time, 0);
         let modify_time = tz.timestamp(modify_time, 0);
 

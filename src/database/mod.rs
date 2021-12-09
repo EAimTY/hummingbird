@@ -127,7 +127,7 @@ pub enum TimeRange {
 
 impl TimeRange {
     pub fn from_year_month(year: &str, month: Option<&str>) -> Option<Self> {
-        let tz = &Config::read().settings.timezone;
+        let tz = &Config::read().application.timezone;
 
         let year = year.parse().ok()?;
 
@@ -163,7 +163,7 @@ impl TimeRange {
             return None;
         }
 
-        let tz = &Config::read().settings.timezone;
+        let tz = &Config::read().application.timezone;
 
         let from = tz.timestamp_opt(from, 0).single()?;
         let to = tz.timestamp_opt(to, 0).single()?;

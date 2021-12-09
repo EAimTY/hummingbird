@@ -1,10 +1,10 @@
-use crate::RouteTable;
+use crate::{Config, RouteTable};
 use anyhow::Result;
 use hyper::{
     service::{make_service_fn, service_fn},
     Server,
 };
-use std::{convert::Infallible, net::SocketAddr};
+use std::convert::Infallible;
 
 pub async fn start() -> Result<()> {
     let service = make_service_fn(move |_| {
@@ -12,9 +12,9 @@ pub async fn start() -> Result<()> {
         async move { Ok::<_, Infallible>(service) }
     });
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-
-    Server::bind(&addr).serve(service).await?;
+    Server::bind(&Config::read().application.listen)
+        .serve(service)
+        .await?;
 
     Ok(())
 }

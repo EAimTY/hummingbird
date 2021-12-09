@@ -3,23 +3,23 @@ use chrono_tz::Tz;
 use getopts::Options;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
-use std::{fs, path::Path};
+use std::{fs, net::SocketAddr, path::Path};
 
 static CONFIG: OnceCell<Config> = OnceCell::new();
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    pub application: Application,
     pub git: Git,
-    pub settings: Settings,
+    pub site: Site,
     pub url_patterns: UrlPatterns,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Settings {
+pub struct Application {
+    pub listen: SocketAddr,
     pub timezone: Tz,
     pub update_token: Option<String>,
-    pub index_posts_count: usize,
-    pub index_posts_from_old_to_new: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,6 +29,15 @@ pub struct Git {
     pub user: Option<String>,
     pub password: Option<String>,
     pub proxy: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Site {
+    pub url: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub index_posts_count: usize,
+    pub index_posts_from_old_to_new: bool,
 }
 
 #[derive(Debug, Deserialize)]
