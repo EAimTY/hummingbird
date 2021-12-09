@@ -7,11 +7,10 @@ pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
 
         let query = req.uri().query()?;
         let filters = PostFilter::from_uri_query(query)?;
+        let search_result = db.posts.filter(&filters)?;
 
-        if let Some(result) = db.posts.filter(&filters) {
-            let res = db.theme.render_search(filters, result);
-            return Some(res);
-        }
+        let res = db.theme.render_search(filters, search_result);
+        return Some(res);
     }
     None
 }
