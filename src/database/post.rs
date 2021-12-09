@@ -163,7 +163,7 @@ impl Post {
 
         let path = url_regex_args
             .replace_all(
-                &Config::read().url_patterns.post_url,
+                &Config::read().url_patterns.post,
                 |cap: &Captures| match &cap[0] {
                     ":slug" => &title,
                     ":year" => &year,

@@ -36,19 +36,20 @@ pub struct Site {
     pub url: String,
     pub title: String,
     pub description: Option<String>,
+    pub homepage: String,
     pub index_posts_count: usize,
     pub index_posts_from_old_to_new: bool,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UrlPatterns {
-    pub index_url: String,
-    pub update_url: String,
-    pub page_url: String,
-    pub post_url: String,
-    pub author_url: String,
-    pub archive_url: String,
-    pub search_url: String,
+    pub index: String,
+    pub update: String,
+    pub page: String,
+    pub post: String,
+    pub author: String,
+    pub archive: String,
+    pub search: String,
 }
 
 impl Config {
