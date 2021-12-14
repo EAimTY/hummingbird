@@ -26,6 +26,24 @@ impl<'p> Params<'p> {
         }
     }
 
+    pub fn from_site(title: &'p str) -> Self {
+        Self {
+            data: [
+                Some(&Config::read().site.name),
+                Some(title),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ],
+        }
+    }
+
     pub fn from_page(page: &'p Page) -> Self {
         Self {
             data: [
@@ -58,6 +76,24 @@ impl<'p> Params<'p> {
                 None,
                 None,
                 None,
+            ],
+        }
+    }
+
+    pub fn from_post_to_summary(post: &'p Post) -> Self {
+        Self {
+            data: [
+                Some(&Config::read().site.name),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(&post.path),
+                Some(&post.title),
+                Some(&post.content),
             ],
         }
     }
