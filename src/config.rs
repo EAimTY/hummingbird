@@ -33,8 +33,8 @@ pub struct Git {
 
 #[derive(Debug, Deserialize)]
 pub struct Site {
+    pub name: String,
     pub url: String,
-    pub title: String,
     pub description: Option<String>,
     pub homepage: String,
     pub index_posts_count: usize,
