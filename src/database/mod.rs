@@ -11,20 +11,20 @@ pub use self::{
     git::Repo,
     page::{Page, Pages},
     post::{Post, PostFilter, Posts},
-    theme::Theme,
+    template::Template,
 };
 
 mod author;
 mod git;
 mod page;
 mod post;
-mod theme;
+mod template;
 
 static DATABASE: OnceCell<RwLock<Database>> = OnceCell::new();
 
 pub struct Database {
     pub repo: Repo,
-    pub theme: Theme,
+    pub template: Template,
     pub posts: Posts,
     pub pages: Pages,
     pub authors: Authors,
@@ -35,7 +35,7 @@ impl Database {
         let mut repo = Repo::init()?;
 
         let ParsedGitRepo {
-            theme,
+            template,
             pages_git_file_info,
             posts_git_file_info,
         } = repo.parse().await?;
@@ -46,7 +46,7 @@ impl Database {
 
         Ok(Self {
             repo,
-            theme,
+            template,
             posts,
             pages,
             authors,
@@ -55,14 +55,14 @@ impl Database {
 
     pub async fn update(&mut self) -> Result<()> {
         let ParsedGitRepo {
-            theme,
+            template,
             pages_git_file_info,
             posts_git_file_info,
         } = self.repo.parse().await?;
 
         RouteTable::clear().await;
 
-        self.theme = theme;
+        self.template = template;
         self.pages =
             Pages::from_git_file_info(pages_git_file_info, self.repo.tempdir.path()).await?;
         self.posts =

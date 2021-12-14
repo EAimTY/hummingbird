@@ -1,8 +1,8 @@
-use super::Theme;
+use super::Template;
 use crate::database::DatabaseUpdateResult;
 use hyper::{Body, Response};
 
-impl Theme {
+impl Template {
     pub fn render_update(&self, result: DatabaseUpdateResult) -> Response<Body> {
         match result {
             DatabaseUpdateResult::Success => Response::new(Body::from("ok")),

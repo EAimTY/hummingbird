@@ -1,8 +1,8 @@
-use super::Theme;
+use super::Template;
 use crate::database::Page;
 use hyper::{Body, Response};
 
-impl Theme {
+impl Template {
     pub fn render_page(&self, page: &Page) -> Response<Body> {
         Response::new(Body::from(page.content.to_owned()))
     }

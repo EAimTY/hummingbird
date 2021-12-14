@@ -7,7 +7,7 @@ pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
 
         let index = db.posts.get_index();
 
-        let res = db.theme.render_index(index);
+        let res = db.template.render_index(index);
         return Some(res);
     }
     None

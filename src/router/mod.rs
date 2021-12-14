@@ -35,11 +35,11 @@ impl RouteTable {
     }
 
     async fn match_pattern(&self, path: &str, req: &Request<Body>) -> Option<Response<Body>> {
-        if let Some(res) = self.map.match_pattern(path, &req).await {
+        if let Some(res) = self.map.match_pattern(path, req).await {
             return Some(res);
         }
 
-        if let Some(res) = self.tree.match_pattern(path, &req).await {
+        if let Some(res) = self.tree.match_pattern(path, req).await {
             return Some(res);
         }
 
@@ -62,7 +62,7 @@ impl RouteTable {
             }
         }
 
-        if path == &Config::read().url_patterns.update {
+        if path == Config::read().url_patterns.update {
             if let Some(res) = update::handle(&mut req).await {
                 return Ok(res);
             }

@@ -19,7 +19,7 @@ pub async fn handle(req: &mut Request<Body>) -> Option<Response<Body>> {
                 let db = DatabaseManager::read().await;
 
                 let res = db
-                    .theme
+                    .template
                     .render_update(DatabaseUpdateResult::PermissionDenied);
 
                 return Some(res);
@@ -38,7 +38,7 @@ pub async fn handle(req: &mut Request<Body>) -> Option<Response<Body>> {
             .map_or_else(DatabaseUpdateResult::Error, |_| {
                 DatabaseUpdateResult::Success
             });
-        let res = db.theme.render_update(result);
+        let res = db.template.render_update(result);
         return Some(res);
     }
 

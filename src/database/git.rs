@@ -1,4 +1,4 @@
-use super::Theme;
+use super::Template;
 use crate::Config;
 use anyhow::Result;
 use git2::{
@@ -190,7 +190,7 @@ impl Repo {
         }
 
         Ok(ParsedGitRepo {
-            theme: Theme::new(),
+            template: Template::new(),
             pages_git_file_info,
             posts_git_file_info,
         })
@@ -243,7 +243,7 @@ fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
 
 #[derive(Debug, Clone)]
 pub struct ParsedGitRepo {
-    pub theme: Theme,
+    pub template: Template,
     pub posts_git_file_info: HashMap<PathBuf, GitFileInfo>,
     pub pages_git_file_info: HashMap<PathBuf, GitFileInfo>,
 }

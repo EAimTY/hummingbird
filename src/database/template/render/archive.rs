@@ -1,8 +1,8 @@
-use super::Theme;
+use super::Template;
 use crate::database::{Post, TimeRange};
 use hyper::{Body, Response};
 
-impl Theme {
+impl Template {
     pub fn render_archive(&self, time_range: TimeRange, posts: Vec<&Post>) -> Response<Body> {
         let time_range = match time_range {
             TimeRange::Year { year, .. } => year.to_string(),
