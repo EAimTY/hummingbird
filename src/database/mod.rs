@@ -36,12 +36,12 @@ impl Database {
 
         let ParsedGitRepo {
             template,
-            pages_git_file_info,
-            posts_git_file_info,
-        } = repo.parse().await?;
+            pages_git_info,
+            posts_git_info,
+        } = repo.parse_repo().await?;
 
-        let pages = Pages::from_git_file_info(pages_git_file_info, repo.tempdir.path()).await?;
-        let posts = Posts::from_git_file_info(posts_git_file_info, repo.tempdir.path()).await?;
+        let pages = Pages::from_git_file_info(pages_git_info, repo.tempdir.path()).await?;
+        let posts = Posts::from_git_file_info(posts_git_info, repo.tempdir.path()).await?;
         let authors = Authors::generate(&pages, &posts);
 
         Ok(Self {
@@ -56,17 +56,15 @@ impl Database {
     pub async fn update(&mut self) -> Result<()> {
         let ParsedGitRepo {
             template,
-            pages_git_file_info,
-            posts_git_file_info,
-        } = self.repo.parse().await?;
+            pages_git_info,
+            posts_git_info,
+        } = self.repo.parse_repo().await?;
 
         RouteTable::clear().await;
 
         self.template = template;
-        self.pages =
-            Pages::from_git_file_info(pages_git_file_info, self.repo.tempdir.path()).await?;
-        self.posts =
-            Posts::from_git_file_info(posts_git_file_info, self.repo.tempdir.path()).await?;
+        self.pages = Pages::from_git_file_info(pages_git_info, self.repo.tempdir.path()).await?;
+        self.posts = Posts::from_git_file_info(posts_git_info, self.repo.tempdir.path()).await?;
         self.authors = Authors::generate(&self.pages, &self.posts);
 
         Ok(())
