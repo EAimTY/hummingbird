@@ -59,6 +59,7 @@ impl Template {
                 page.push(Part::Static(page_str[ptr..cap.start()].to_owned()));
                 ptr = cap.end() + 1;
                 match cap.as_str() {
+                    "{:document.title}" => page.push(Part::DocumentTitle),
                     "{:page.title}" => page.push(Part::PageTitle),
                     "{:page.link}" => page.push(Part::PageLink),
                     "{:page.content}" => page.push(Part::PageContent),
@@ -77,6 +78,7 @@ impl Template {
                 post.push(Part::Static(post_str[ptr..cap.start()].to_owned()));
                 ptr = cap.end() + 1;
                 match cap.as_str() {
+                    "{:document.title}" => post.push(Part::DocumentTitle),
                     "{:post.title}" => post.push(Part::PostTitle),
                     "{:post.link}" => post.push(Part::PostLink),
                     "{:post.content}" => post.push(Part::PostContent),
@@ -95,6 +97,7 @@ impl Template {
                 summary.push(Part::Static(summary_str[ptr..cap.start()].to_owned()));
                 ptr = cap.end() + 1;
                 match cap.as_str() {
+                    "{:document.title}" => summary.push(Part::DocumentTitle),
                     "{:summary.title}" => summary.push(Part::SummaryTitle),
                     "{:summary.link}" => summary.push(Part::SummaryLink),
                     "{:summary.content}" => summary.push(Part::SummaryContent),
