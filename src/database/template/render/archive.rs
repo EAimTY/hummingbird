@@ -1,4 +1,4 @@
-use super::Template;
+use super::{Params, Template};
 use crate::database::{Post, TimeRange};
 use hyper::{Body, Response};
 
@@ -10,13 +10,19 @@ impl Template {
             TimeRange::Free { .. } => unreachable!(),
         };
 
-        Response::new(Body::from(format!(
-            "{}\n\n{}",
-            time_range,
-            posts
-                .into_iter()
-                .map(|post| format!("{}\n{}\n\n", post.title.to_owned(), post.content.to_owned()))
-                .collect::<String>()
-        )))
+        let params_site = Params::from_site(&time_range);
+
+        let header = self.header(&params_site);
+        let footer = self.footer(&params_site);
+
+        let posts = posts
+            .iter()
+            .map(|post| {
+                let params = Params::from_post_to_summary(post);
+                self.summary(&params)
+            })
+            .collect::<String>();
+
+        Response::new(Body::from(format!("{}{}{}", header, posts, footer)))
     }
 }

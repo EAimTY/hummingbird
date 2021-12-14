@@ -71,7 +71,6 @@ impl Template {
                 ptr = cap.end();
                 match cap.as_str() {
                     "{:site.name}" => page.push(Part::SiteName),
-                    "{:document.title}" => page.push(Part::DocumentTitle),
                     "{:page.title}" => page.push(Part::PageTitle),
                     "{:page.link}" => page.push(Part::PageLink),
                     "{:page.content}" => page.push(Part::PageContent),
@@ -94,7 +93,6 @@ impl Template {
                 ptr = cap.end();
                 match cap.as_str() {
                     "{:site.name}" => post.push(Part::SiteName),
-                    "{:document.title}" => post.push(Part::DocumentTitle),
                     "{:post.title}" => post.push(Part::PostTitle),
                     "{:post.link}" => post.push(Part::PostLink),
                     "{:post.content}" => post.push(Part::PostContent),
@@ -117,7 +115,6 @@ impl Template {
                 ptr = cap.end();
                 match cap.as_str() {
                     "{:site.name}" => summary.push(Part::SiteName),
-                    "{:document.title}" => summary.push(Part::DocumentTitle),
                     "{:summary.title}" => summary.push(Part::SummaryTitle),
                     "{:summary.link}" => summary.push(Part::SummaryLink),
                     "{:summary.content}" => summary.push(Part::SummaryContent),
@@ -179,6 +176,19 @@ impl Template {
 
     fn post(&self, params: &Params) -> String {
         self.post
+            .iter()
+            .map(|part| {
+                if let Part::Static(str) = part {
+                    str
+                } else {
+                    params.get(part)
+                }
+            })
+            .collect()
+    }
+
+    fn summary(&self, params: &Params) -> String {
+        self.summary
             .iter()
             .map(|part| {
                 if let Part::Static(str) = part {
