@@ -16,7 +16,7 @@ pub struct Repo {
 impl Repo {
     pub fn init() -> Result<Self> {
         let mut builder = RepoBuilder::new();
-        builder.fetch_options(get_fetch_options());
+        builder.fetch_options(Self::get_fetch_options());
 
         let tempdir = TempDir::new()?;
 
@@ -25,12 +25,48 @@ impl Repo {
         Ok(Self { repo, tempdir })
     }
 
-    pub async fn parse(&mut self) -> Result<ParsedGitRepo> {
+    pub async fn parse_repo(&mut self) -> Result<ParsedGitRepo> {
         self.fetch()?;
 
-        let mut pages_git_file_info = HashMap::new();
-        let mut posts_git_file_info = HashMap::new();
+        let mut pages_git_info = HashMap::new();
+        let mut posts_git_info = HashMap::new();
 
+        self.get_git_info(&mut pages_git_info, &mut posts_git_info)?;
+
+        let template_path = self.tempdir.path().join("template/");
+        let template = Template::from_directory(&template_path).await?;
+
+        Ok(ParsedGitRepo {
+            template,
+            pages_git_info,
+            posts_git_info,
+        })
+    }
+
+    fn fetch(&mut self) -> Result<()> {
+        let mut origin_remote = self.repo.find_remote("origin")?;
+
+        origin_remote.fetch(
+            &[&Config::read().git.branch],
+            Some(&mut Self::get_fetch_options()),
+            None,
+        )?;
+        let oid = self.repo.refname_to_id(&format!(
+            "refs/remotes/origin/{}",
+            &Config::read().git.branch
+        ))?;
+
+        let object = self.repo.find_object(oid, None)?;
+        self.repo.reset(&object, ResetType::Hard, None)?;
+
+        Ok(())
+    }
+
+    fn get_git_info(
+        &self,
+        pages_git_info: &mut HashMap<PathBuf, GitFileInfo>,
+        posts_git_info: &mut HashMap<PathBuf, GitFileInfo>,
+    ) -> Result<()> {
         let mut status_map = HashMap::new();
 
         let mut revwalk = self.repo.revwalk()?;
@@ -70,9 +106,9 @@ impl Repo {
                             })
                         {
                             let entry = if let ContentType::Page = content_type {
-                                pages_git_file_info.entry(path)
+                                pages_git_info.entry(path)
                             } else {
-                                posts_git_file_info.entry(path)
+                                posts_git_info.entry(path)
                             };
 
                             entry.or_insert_with(|| {
@@ -99,9 +135,9 @@ impl Repo {
                         }) {
                             FileStatus::Created(content_type) => {
                                 let entry = if let ContentType::Page = content_type {
-                                    pages_git_file_info.entry(path)
+                                    pages_git_info.entry(path)
                                 } else {
-                                    posts_git_file_info.entry(path)
+                                    posts_git_info.entry(path)
                                 };
 
                                 let info = entry.or_insert_with(|| {
@@ -118,10 +154,9 @@ impl Repo {
                                 );
                             }
                             FileStatus::Renamed(new_path) => {
-                                let info =
-                                    pages_git_file_info.get_mut(new_path).unwrap_or_else(|| {
-                                        posts_git_file_info.get_mut(new_path).unwrap()
-                                    });
+                                let info = pages_git_info
+                                    .get_mut(new_path)
+                                    .unwrap_or_else(|| posts_git_info.get_mut(new_path).unwrap());
 
                                 info.set(
                                     commit.author().name(),
@@ -153,9 +188,9 @@ impl Repo {
                         {
                             FileStatus::Created(content_type) => {
                                 let entry = if let ContentType::Page = content_type {
-                                    pages_git_file_info.entry(new_path.clone())
+                                    pages_git_info.entry(new_path.clone())
                                 } else {
-                                    posts_git_file_info.entry(new_path.clone())
+                                    posts_git_info.entry(new_path.clone())
                                 };
 
                                 entry.or_insert_with(|| {
@@ -189,30 +224,29 @@ impl Repo {
             }
         }
 
-        Ok(ParsedGitRepo {
-            template: Template::new(),
-            pages_git_file_info,
-            posts_git_file_info,
-        })
+        Ok(())
     }
 
-    fn fetch(&mut self) -> Result<()> {
-        let mut origin_remote = self.repo.find_remote("origin")?;
+    fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
+        let mut fetch_options = FetchOptions::new();
 
-        origin_remote.fetch(
-            &[&Config::read().git.branch],
-            Some(&mut get_fetch_options()),
-            None,
-        )?;
-        let oid = self.repo.refname_to_id(&format!(
-            "refs/remotes/origin/{}",
-            &Config::read().git.branch
-        ))?;
+        if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
+            let mut proxy_option = ProxyOptions::new();
+            proxy_option.url(proxy_url);
+            fetch_options.proxy_options(proxy_option);
+        }
 
-        let object = self.repo.find_object(oid, None)?;
-        self.repo.reset(&object, ResetType::Hard, None)?;
+        if let (Some(username), Some(password)) = (
+            Config::read().git.user.as_ref(),
+            Config::read().git.password.as_ref(),
+        ) {
+            let mut remote_callbacks = RemoteCallbacks::new();
+            remote_callbacks
+                .credentials(move |_, _, _| Cred::userpass_plaintext(username, password));
+            fetch_options.remote_callbacks(remote_callbacks);
+        }
 
-        Ok(())
+        fetch_options
     }
 }
 
@@ -220,32 +254,11 @@ impl Repo {
 unsafe impl Send for Repo {}
 unsafe impl Sync for Repo {}
 
-fn get_fetch_options<'repo>() -> FetchOptions<'repo> {
-    let mut fetch_options = FetchOptions::new();
-
-    if let Some(proxy_url) = Config::read().git.proxy.as_ref() {
-        let mut proxy_option = ProxyOptions::new();
-        proxy_option.url(proxy_url);
-        fetch_options.proxy_options(proxy_option);
-    }
-
-    if let (Some(username), Some(password)) = (
-        Config::read().git.user.as_ref(),
-        Config::read().git.password.as_ref(),
-    ) {
-        let mut remote_callbacks = RemoteCallbacks::new();
-        remote_callbacks.credentials(move |_, _, _| Cred::userpass_plaintext(username, password));
-        fetch_options.remote_callbacks(remote_callbacks);
-    }
-
-    fetch_options
-}
-
 #[derive(Debug, Clone)]
 pub struct ParsedGitRepo {
     pub template: Template,
-    pub posts_git_file_info: HashMap<PathBuf, GitFileInfo>,
-    pub pages_git_file_info: HashMap<PathBuf, GitFileInfo>,
+    pub posts_git_info: HashMap<PathBuf, GitFileInfo>,
+    pub pages_git_info: HashMap<PathBuf, GitFileInfo>,
 }
 
 #[derive(Debug, Clone)]
