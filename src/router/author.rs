@@ -8,7 +8,7 @@ pub async fn handle(req: &Request<Body>, author: &str) -> Option<Response<Body>>
         let post_ids = db.authors.get_posts(author)?;
         let posts = db.posts.get_multi(post_ids);
 
-        let res = db.theme.render_author(author, posts);
+        let res = db.template.render_author(author, posts);
         return Some(res);
     }
     None

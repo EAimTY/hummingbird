@@ -12,7 +12,7 @@ pub async fn handle(
         let time_range = TimeRange::from_year_month(year, month)?;
         let posts = db.posts.get_time_range(&time_range)?;
 
-        let res = db.theme.render_archive(time_range, posts);
+        let res = db.template.render_archive(time_range, posts);
         return Some(res);
     }
     None

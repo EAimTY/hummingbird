@@ -9,7 +9,7 @@ pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
         let filters = PostFilter::from_uri_query(query)?;
         let search_result = db.posts.filter(&filters)?;
 
-        let res = db.theme.render_search(filters, search_result);
+        let res = db.template.render_search(filters, search_result);
         return Some(res);
     }
     None

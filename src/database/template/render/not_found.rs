@@ -1,7 +1,7 @@
-use super::Theme;
+use super::Template;
 use hyper::{Body, Response};
 
-impl Theme {
+impl Template {
     pub fn render_not_found(&self) -> Response<Body> {
         Response::builder()
             .status(404)

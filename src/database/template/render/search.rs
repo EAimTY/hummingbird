@@ -1,11 +1,11 @@
-use super::Theme;
-use crate::database::Post;
+use super::Template;
+use crate::database::{Post, PostFilter};
 use hyper::{Body, Response};
 
-impl Theme {
-    pub fn render_index(&self, index: Vec<&Post>) -> Response<Body> {
+impl Template {
+    pub fn render_search(&self, _filters: Vec<PostFilter>, result: Vec<&Post>) -> Response<Body> {
         Response::new(Body::from(
-            index
+            result
                 .into_iter()
                 .map(|post| format!("{}\n{}\n\n", post.title.to_owned(), post.content.to_owned()))
                 .collect::<String>(),
