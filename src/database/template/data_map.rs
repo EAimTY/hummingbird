@@ -86,7 +86,7 @@ impl<'d> PageDataMap<'d> {
         Self {
             data: [
                 Cow::Borrowed(&page.title),
-                Cow::Borrowed(&page.path),
+                Cow::Borrowed(&page.url),
                 Cow::Borrowed(&page.content),
             ],
         }
@@ -95,7 +95,7 @@ impl<'d> PageDataMap<'d> {
     pub fn get(&self, param: &PageParameter) -> &str {
         match param {
             PageParameter::Title => &self.data[0],
-            PageParameter::Link => &self.data[1],
+            PageParameter::Url => &self.data[1],
             PageParameter::Content => &self.data[2],
         }
     }
@@ -110,7 +110,7 @@ impl<'d> PostDataMap<'d> {
         Self {
             data: [
                 Cow::Borrowed(&post.title),
-                Cow::Borrowed(&post.path),
+                Cow::Borrowed(&post.url),
                 Cow::Borrowed(&post.content),
             ],
         }
@@ -119,7 +119,7 @@ impl<'d> PostDataMap<'d> {
     pub fn get(&self, param: &PostParameter) -> &str {
         match param {
             PostParameter::Title => &self.data[0],
-            PostParameter::Link => &self.data[1],
+            PostParameter::Url => &self.data[1],
             PostParameter::Content => &self.data[2],
         }
     }
@@ -134,7 +134,7 @@ impl<'d> SummaryDataMap<'d> {
         Self {
             data: [
                 Cow::Borrowed(&post.title),
-                Cow::Borrowed(&post.path),
+                Cow::Borrowed(&post.url),
                 Cow::Borrowed(&post.content),
             ],
         }
@@ -143,7 +143,7 @@ impl<'d> SummaryDataMap<'d> {
     pub fn get(&self, param: &SummaryParameter) -> &str {
         match param {
             SummaryParameter::Title => &self.data[0],
-            SummaryParameter::Link => &self.data[1],
+            SummaryParameter::Url => &self.data[1],
             SummaryParameter::Content => &self.data[2],
         }
     }

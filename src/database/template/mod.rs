@@ -41,7 +41,7 @@ impl Template {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:page.title}" => Ok(Part::Page(PageParameter::Title)),
-            "{:page.link}" => Ok(Part::Page(PageParameter::Link)),
+            "{:page.link}" => Ok(Part::Page(PageParameter::Url)),
             "{:page.content}" => Ok(Part::Page(PageParameter::Content)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
@@ -51,7 +51,7 @@ impl Template {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:post.title}" => Ok(Part::Post(PostParameter::Title)),
-            "{:post.link}" => Ok(Part::Post(PostParameter::Link)),
+            "{:post.link}" => Ok(Part::Post(PostParameter::Url)),
             "{:post.content}" => Ok(Part::Post(PostParameter::Content)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
@@ -61,7 +61,7 @@ impl Template {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
-            "{:summary.link}" => Ok(Part::Summary(SummaryParameter::Link)),
+            "{:summary.link}" => Ok(Part::Summary(SummaryParameter::Url)),
             "{:summary.content}" => Ok(Part::Summary(SummaryParameter::Content)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;

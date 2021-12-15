@@ -46,10 +46,12 @@ impl Pages {
 
         let data = data.into_sorted_vec();
 
+        let site_url_len = Config::read().site.url.len();
+
         let map = data
             .iter()
             .enumerate()
-            .map(|(idx, page)| (page.path.to_owned(), idx))
+            .map(|(idx, page)| (page.url[site_url_len..].to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
         RouteTable::update_pages(map).await;
@@ -64,8 +66,8 @@ impl Pages {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Page {
-    pub path: String,
     pub title: String,
+    pub url: String,
     pub content: String,
     pub author: Option<String>,
     pub create_time: DateTime<Tz>,
@@ -85,19 +87,19 @@ impl Page {
         let create_time = tz.timestamp(create_time, 0);
         let modify_time = tz.timestamp(modify_time, 0);
 
-        let path = url_regex_args
-            .replace_all(
-                &Config::read().url_patterns.page,
-                |cap: &Captures| match &cap[0] {
+        let path =
+            url_regex_args.replace_all(&Config::read().url_patterns.page, |cap: &Captures| {
+                match &cap[0] {
                     ":slug" => &title,
                     _ => unreachable!(),
-                },
-            )
-            .into_owned();
+                }
+            });
+
+        let url = format!("{}{}", &Config::read().site.url, path);
 
         Self {
-            path,
             title,
+            url,
             content,
             author,
             create_time,
