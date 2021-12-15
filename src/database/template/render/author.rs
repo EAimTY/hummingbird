@@ -1,21 +1,24 @@
-use super::{Params, Template};
+use super::{
+    data_map::{DocumentDataMap, SiteDataMap, SummaryDataMap},
+    Template,
+};
 use crate::database::Post;
 use hyper::{Body, Response};
 
 impl Template {
     pub fn render_author(&self, author: &str, posts: Vec<&Post>) -> Response<Body> {
-        let params_site = Params::from_site(author);
+        let site_data = SiteDataMap::from_config();
+        let document_data = DocumentDataMap::from_author(author);
 
-        let header = self.header(&params_site);
-        let footer = self.footer(&params_site);
-
+        let header = self.header(&site_data, &document_data);
         let posts = posts
             .iter()
             .map(|post| {
-                let params = Params::from_post_to_summary(post);
-                self.summary(&params)
+                let summary_data = SummaryDataMap::from_post(post);
+                self.summary(&site_data, &document_data, &summary_data)
             })
             .collect::<String>();
+        let footer = self.footer(&site_data, &document_data);
 
         Response::new(Body::from(format!("{}{}{}", header, posts, footer)))
     }

@@ -1,10 +1,11 @@
-use self::params::Params;
+use self::{data_map::*, parameter::*};
 use anyhow::{anyhow, Result};
 use regex::Regex;
 use std::path::Path;
 use tokio::fs;
 
-mod params;
+pub mod data_map;
+mod parameter;
 mod render;
 
 #[derive(Clone, Debug)]
@@ -22,45 +23,45 @@ impl Template {
 
         let header = fs::read_to_string(path.join("header.html")).await?;
         let header = Self::parse_string(&header, &param_pattern, &|str| match str {
-            "{:site.name}" => Ok(Part::SiteName),
-            "{:document.title}" => Ok(Part::DocumentTitle),
+            "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
         let footer = fs::read_to_string(path.join("footer.html")).await?;
         let footer = Self::parse_string(&footer, &param_pattern, &|str| match str {
-            "{:site.name}" => Ok(Part::SiteName),
-            "{:document.title}" => Ok(Part::DocumentTitle),
+            "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
         let page = fs::read_to_string(path.join("page.html")).await?;
         let page = Self::parse_string(&page, &param_pattern, &|str| match str {
-            "{:site.name}" => Ok(Part::SiteName),
-            "{:document.title}" => Ok(Part::DocumentTitle),
-            "{:page.title}" => Ok(Part::PageTitle),
-            "{:page.link}" => Ok(Part::PageLink),
-            "{:page.content}" => Ok(Part::PageContent),
+            "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:page.title}" => Ok(Part::Page(PageParameter::Title)),
+            "{:page.link}" => Ok(Part::Page(PageParameter::Link)),
+            "{:page.content}" => Ok(Part::Page(PageParameter::Content)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
         let post = fs::read_to_string(path.join("post.html")).await?;
         let post = Self::parse_string(&post, &param_pattern, &|str| match str {
-            "{:site.name}" => Ok(Part::SiteName),
-            "{:document.title}" => Ok(Part::DocumentTitle),
-            "{:post.title}" => Ok(Part::PostTitle),
-            "{:post.link}" => Ok(Part::PostLink),
-            "{:post.content}" => Ok(Part::PostContent),
+            "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:post.title}" => Ok(Part::Post(PostParameter::Title)),
+            "{:post.link}" => Ok(Part::Post(PostParameter::Link)),
+            "{:post.content}" => Ok(Part::Post(PostParameter::Content)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
         let summary = fs::read_to_string(path.join("summary.html")).await?;
         let summary = Self::parse_string(&summary, &param_pattern, &|str| match str {
-            "{:site.name}" => Ok(Part::SiteName),
-            "{:document.title}" => Ok(Part::DocumentTitle),
-            "{:summary.title}" => Ok(Part::SummaryTitle),
-            "{:summary.link}" => Ok(Part::SummaryLink),
-            "{:summary.content}" => Ok(Part::SummaryContent),
+            "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
+            "{:summary.link}" => Ok(Part::Summary(SummaryParameter::Link)),
+            "{:summary.content}" => Ok(Part::Summary(SummaryParameter::Content)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -94,67 +95,80 @@ impl Template {
         Ok(result)
     }
 
-    fn header(&self, params: &Params) -> String {
+    fn header(&self, site_data: &SiteDataMap, document_data: &DocumentDataMap) -> String {
         self.header
             .iter()
-            .map(|part| {
-                if let Part::Static(str) = part {
-                    str
-                } else {
-                    params.get(part)
-                }
+            .map(|part| match part {
+                Part::Static(str) => str,
+                Part::Site(param) => site_data.get(param),
+                Part::Document(param) => document_data.get(param),
+                _ => unreachable!(),
             })
             .collect()
     }
 
-    fn footer(&self, params: &Params) -> String {
+    fn footer(&self, site_data: &SiteDataMap, document_data: &DocumentDataMap) -> String {
         self.footer
             .iter()
-            .map(|part| {
-                if let Part::Static(str) = part {
-                    str
-                } else {
-                    params.get(part)
-                }
+            .map(|part| match part {
+                Part::Static(str) => str,
+                Part::Site(param) => site_data.get(param),
+                Part::Document(param) => document_data.get(param),
+                _ => unreachable!(),
             })
             .collect()
     }
 
-    fn page(&self, params: &Params) -> String {
+    fn page(
+        &self,
+        site_data: &SiteDataMap,
+        document_data: &DocumentDataMap,
+        page_data: &PageDataMap,
+    ) -> String {
         self.page
             .iter()
-            .map(|part| {
-                if let Part::Static(str) = part {
-                    str
-                } else {
-                    params.get(part)
-                }
+            .map(|part| match part {
+                Part::Static(str) => str,
+                Part::Site(param) => site_data.get(param),
+                Part::Document(param) => document_data.get(param),
+                Part::Page(param) => page_data.get(param),
+                _ => unreachable!(),
             })
             .collect()
     }
 
-    fn post(&self, params: &Params) -> String {
+    fn post(
+        &self,
+        site_data: &SiteDataMap,
+        document_data: &DocumentDataMap,
+        post_data: &PostDataMap,
+    ) -> String {
         self.post
             .iter()
-            .map(|part| {
-                if let Part::Static(str) = part {
-                    str
-                } else {
-                    params.get(part)
-                }
+            .map(|part| match part {
+                Part::Static(str) => str,
+                Part::Site(param) => site_data.get(param),
+                Part::Document(param) => document_data.get(param),
+                Part::Post(param) => post_data.get(param),
+                _ => unreachable!(),
             })
             .collect()
     }
 
-    fn summary(&self, params: &Params) -> String {
+    fn summary(
+        &self,
+        site_data: &SiteDataMap,
+        document_data: &DocumentDataMap,
+        summary_data: &SummaryDataMap,
+    ) -> String {
         self.summary
             .iter()
-            .map(|part| {
-                if let Part::Static(str) = part {
-                    str
-                } else {
-                    params.get(part)
-                }
+            .map(|part| match part {
+                Part::Static(str) => str,
+                Part::Site(param) => site_data.get(param),
+                Part::Document(param) => document_data.get(param),
+                Part::Summary(param) => summary_data.get(param),
+                _ => unreachable!(),
             })
             .collect()
     }
@@ -163,15 +177,9 @@ impl Template {
 #[derive(Clone, Debug)]
 pub enum Part {
     Static(String),
-    SiteName,
-    DocumentTitle,
-    PageTitle,
-    PageLink,
-    PageContent,
-    PostTitle,
-    PostLink,
-    PostContent,
-    SummaryTitle,
-    SummaryLink,
-    SummaryContent,
+    Site(SiteParameter),
+    Document(DocumentParameter),
+    Page(PageParameter),
+    Post(PostParameter),
+    Summary(SummaryParameter),
 }

@@ -7,4 +7,4 @@ mod post;
 mod search;
 mod update;
 
-pub use super::{params::Params, Template};
+pub use super::{data_map, Template};
