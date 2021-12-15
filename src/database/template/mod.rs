@@ -5,6 +5,7 @@ use std::path::Path;
 use tokio::fs;
 
 pub mod data_map;
+mod markdown;
 mod parameter;
 mod render;
 
