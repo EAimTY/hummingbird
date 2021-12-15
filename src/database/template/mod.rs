@@ -83,11 +83,10 @@ impl Template {
         })
     }
 
-    fn parse_string(
-        str: &str,
-        param_pattern: &Regex,
-        param_matcher: &dyn Fn(&str) -> Result<Part>,
-    ) -> Result<Vec<Part>> {
+    fn parse_string<M>(str: &str, param_pattern: &Regex, param_matcher: &M) -> Result<Vec<Part>>
+    where
+        M: Fn(&str) -> Result<Part>,
+    {
         let mut result = Vec::new();
         let mut start = 0;
 
