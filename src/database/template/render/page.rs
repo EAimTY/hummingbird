@@ -1,14 +1,20 @@
-use super::{Params, Template};
+use super::{
+    data_map::{DocumentDataMap, PageDataMap, SiteDataMap},
+    Template,
+};
 use crate::database::Page;
 use hyper::{Body, Response};
 
 impl Template {
     pub fn render_page(&self, page: &Page) -> Response<Body> {
-        let params = Params::from_page(page);
+        let site_data = SiteDataMap::from_config();
+        let document_data = DocumentDataMap::from_page(page);
 
-        let header = self.header(&params);
-        let footer = self.footer(&params);
-        let page = self.page(&params);
+        let page_data = PageDataMap::from_page(page);
+
+        let header = self.header(&site_data, &document_data);
+        let page = self.page(&site_data, &document_data, &page_data);
+        let footer = self.footer(&site_data, &document_data);
 
         Response::new(Body::from(format!("{}{}{}", header, page, footer)))
     }
