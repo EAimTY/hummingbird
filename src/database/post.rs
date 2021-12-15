@@ -46,10 +46,12 @@ impl Posts {
 
         let data = data.into_sorted_vec();
 
+        let site_url_len = Config::read().site.url.len();
+
         let map = data
             .iter()
             .enumerate()
-            .map(|(idx, post)| (post.path.to_owned(), idx))
+            .map(|(idx, post)| (post.url[site_url_len..].to_owned(), idx))
             .collect::<HashMap<String, usize>>();
 
         RouteTable::update_posts(map).await;
@@ -136,8 +138,8 @@ impl Posts {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Post {
-    pub path: String,
     pub title: String,
+    pub url: String,
     pub content: String,
     pub author: Option<String>,
     pub create_time: DateTime<Tz>,
@@ -161,21 +163,21 @@ impl Post {
 
         let month = create_time.month().to_string();
 
-        let path = url_regex_args
-            .replace_all(
-                &Config::read().url_patterns.post,
-                |cap: &Captures| match &cap[0] {
+        let path =
+            url_regex_args.replace_all(&Config::read().url_patterns.post, |cap: &Captures| {
+                match &cap[0] {
                     ":slug" => &title,
                     ":year" => &year,
                     ":month" => &month,
                     _ => unreachable!(),
-                },
-            )
-            .into_owned();
+                }
+            });
+
+        let url = format!("{}{}", &Config::read().site.url, path);
 
         Self {
-            path,
             title,
+            url,
             content,
             author,
             create_time,

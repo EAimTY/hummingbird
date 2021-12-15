@@ -59,6 +59,10 @@ impl Config {
         Ok(config)
     }
 
+    fn process(&mut self) {
+        self.site.url = self.site.url.trim_end_matches('/').to_owned();
+    }
+
     pub fn read() -> &'static Self {
         CONFIG.get().unwrap()
     }
@@ -104,7 +108,9 @@ impl<'cfg> ConfigBuilder<'cfg> {
             .opt_str("c")
             .ok_or_else(|| anyhow!("No config file specificed"))?;
 
-        let config = Config::from_file(config_file)?;
+        let mut config = Config::from_file(config_file)?;
+        config.process();
+
         CONFIG.set(config).unwrap();
 
         Ok(())

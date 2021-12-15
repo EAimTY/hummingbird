@@ -11,20 +11,20 @@ pub enum DocumentParameter {
 #[derive(Clone, Debug)]
 pub enum PageParameter {
     Title,
-    Link,
+    Url,
     Content,
 }
 
 #[derive(Clone, Debug)]
 pub enum PostParameter {
     Title,
-    Link,
+    Url,
     Content,
 }
 
 #[derive(Clone, Debug)]
 pub enum SummaryParameter {
     Title,
-    Link,
+    Url,
     Content,
 }
