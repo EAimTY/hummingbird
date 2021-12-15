@@ -1,4 +1,4 @@
-use super::parameter::*;
+use super::{markdown, parameter::*};
 use crate::{
     database::{Page, Post},
     Config,
@@ -87,7 +87,7 @@ impl<'d> PageDataMap<'d> {
             data: [
                 Cow::Borrowed(&page.title),
                 Cow::Borrowed(&page.url),
-                Cow::Borrowed(&page.content),
+                Cow::Owned(markdown::md_to_html(&page.content)),
             ],
         }
     }
@@ -111,7 +111,7 @@ impl<'d> PostDataMap<'d> {
             data: [
                 Cow::Borrowed(&post.title),
                 Cow::Borrowed(&post.url),
-                Cow::Borrowed(&post.content),
+                Cow::Owned(markdown::md_to_html(&post.content)),
             ],
         }
     }
@@ -135,7 +135,7 @@ impl<'d> SummaryDataMap<'d> {
             data: [
                 Cow::Borrowed(&post.title),
                 Cow::Borrowed(&post.url),
-                Cow::Borrowed(&post.content),
+                Cow::Owned(markdown::md_to_html(&post.content)),
             ],
         }
     }
