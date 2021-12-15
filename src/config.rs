@@ -37,8 +37,8 @@ pub struct Site {
     pub url: String,
     pub description: Option<String>,
     pub homepage: String,
-    pub index_posts_count: usize,
-    pub index_posts_from_old_to_new: bool,
+    pub list_posts_count: usize,
+    pub list_from_old_to_new: bool,
 }
 
 #[derive(Debug, Deserialize)]

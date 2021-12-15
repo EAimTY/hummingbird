@@ -63,11 +63,11 @@ impl Posts {
         &self.data[id]
     }
 
-    pub fn get_multi(&self, id: &[usize]) -> Vec<&Post> {
-        id.iter().map(|id| &self.data[*id]).collect()
+    pub fn get_multi(&self, id: &[usize], page_num: usize) -> Option<Vec<&Post>> {
+        Self::page_filter(id.iter().map(|id| &self.data[*id]), page_num)
     }
 
-    pub fn get_time_range(&self, time_range: &TimeRange) -> Option<Vec<&Post>> {
+    pub fn get_time_range(&self, time_range: &TimeRange, page_num: usize) -> Option<Vec<&Post>> {
         let from = self
             .data
             .partition_point(|post| &post.create_time < time_range.from());
@@ -76,60 +76,63 @@ impl Posts {
             .data
             .partition_point(|post| &post.create_time <= time_range.to());
 
-        if from != to {
-            Some(self.data[from..to].iter().collect())
-        } else {
-            None
-        }
+        Self::page_filter(self.data[from..to].iter(), page_num)
     }
 
-    pub fn get_index(&self) -> Vec<&Post> {
-        if Config::read().site.index_posts_from_old_to_new {
-            self.data
-                .iter()
-                .take(Config::read().site.index_posts_count)
-                .collect()
-        } else {
-            self.data
-                .iter()
-                .rev()
-                .take(Config::read().site.index_posts_count)
-                .collect()
-        }
+    pub fn get_index(&self, page_num: usize) -> Option<Vec<&Post>> {
+        Self::page_filter(self.data.iter(), page_num)
     }
 
-    pub fn filter(&self, filters: &[PostFilter]) -> Option<Vec<&Post>> {
-        let mut res: Box<dyn Iterator<Item = &Post>> = Box::new(self.data.iter());
+    pub fn search(&self, filters: &[PostFilter], page_num: usize) -> Option<Vec<&Post>> {
+        let mut posts: Box<dyn DoubleEndedIterator<Item = &Post>> = Box::new(self.data.iter());
 
         for filter in filters {
-            res = match filter {
+            posts = match filter {
                 PostFilter::Keyword(keyword) => {
                     let filter = move |post: &&Post| {
                         post.title.contains(keyword) || post.content.contains(keyword)
                     };
-                    Box::new(res.filter(filter))
+                    Box::new(posts.filter(filter))
                 }
                 PostFilter::TimeRange(time_range) => {
                     let filter = move |post: &&Post| {
                         &post.create_time >= time_range.from()
                             && &post.create_time <= time_range.to()
                     };
-                    Box::new(res.filter(filter))
+                    Box::new(posts.filter(filter))
                 }
                 PostFilter::Author(author) => {
                     let filter = move |post: &&Post| match &post.author {
                         Some(post_author) => post_author == author,
                         None => false,
                     };
-                    Box::new(res.filter(filter))
+                    Box::new(posts.filter(filter))
                 }
             }
         }
 
-        let res = res.collect::<Vec<_>>();
+        Self::page_filter(posts, page_num)
+    }
 
-        if !res.is_empty() {
-            Some(res)
+    fn page_filter<'p>(
+        posts: impl DoubleEndedIterator<Item = &'p Post>,
+        page_num: usize,
+    ) -> Option<Vec<&'p Post>> {
+        let posts = if Config::read().site.list_from_old_to_new {
+            posts
+                .skip((page_num - 1) * Config::read().site.list_posts_count)
+                .take(Config::read().site.list_posts_count)
+                .collect::<Vec<_>>()
+        } else {
+            posts
+                .rev()
+                .skip((page_num - 1) * Config::read().site.list_posts_count)
+                .take(Config::read().site.list_posts_count)
+                .collect::<Vec<_>>()
+        };
+
+        if !posts.is_empty() {
+            Some(posts)
         } else {
             None
         }
