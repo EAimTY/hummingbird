@@ -64,6 +64,12 @@ impl<'d> DocumentDataMap<'d> {
         }
     }
 
+    pub fn from_not_found() -> Self {
+        Self {
+            data: [Cow::Borrowed("Not Found")],
+        }
+    }
+
     pub fn get(&self, param: &DocumentParameter) -> &str {
         match param {
             DocumentParameter::Title => &self.data[0],
@@ -130,16 +136,6 @@ impl<'d> SummaryDataMap<'d> {
                 Cow::Borrowed(&post.title),
                 Cow::Borrowed(&post.path),
                 Cow::Borrowed(&post.content),
-            ],
-        }
-    }
-
-    pub fn from_page(page: &'d Page) -> Self {
-        Self {
-            data: [
-                Cow::Borrowed(&page.title),
-                Cow::Borrowed(&page.path),
-                Cow::Borrowed(&page.content),
             ],
         }
     }
