@@ -63,11 +63,15 @@ impl Posts {
         &self.data[id]
     }
 
-    pub fn get_multi(&self, id: &[usize], page_num: usize) -> Option<Vec<&Post>> {
-        Self::page_filter(id.iter().map(|id| &self.data[*id]), page_num)
+    pub fn get_multi(&self, id: &[usize], current_page: usize) -> Option<(Vec<&Post>, usize)> {
+        Self::page_filter(id.iter().map(|id| &self.data[*id]), current_page)
     }
 
-    pub fn get_time_range(&self, time_range: &TimeRange, page_num: usize) -> Option<Vec<&Post>> {
+    pub fn get_time_range(
+        &self,
+        time_range: &TimeRange,
+        current_page: usize,
+    ) -> Option<(Vec<&Post>, usize)> {
         let from = self
             .data
             .partition_point(|post| &post.create_time < time_range.from());
@@ -76,14 +80,18 @@ impl Posts {
             .data
             .partition_point(|post| &post.create_time <= time_range.to());
 
-        Self::page_filter(self.data[from..to].iter(), page_num)
+        Self::page_filter(self.data[from..to].iter(), current_page)
     }
 
-    pub fn get_index(&self, page_num: usize) -> Option<Vec<&Post>> {
-        Self::page_filter(self.data.iter(), page_num)
+    pub fn get_index(&self, current_page: usize) -> Option<(Vec<&Post>, usize)> {
+        Self::page_filter(self.data.iter(), current_page)
     }
 
-    pub fn search(&self, filters: &[PostFilter], page_num: usize) -> Option<Vec<&Post>> {
+    pub fn search(
+        &self,
+        filters: &[PostFilter],
+        current_page: usize,
+    ) -> Option<(Vec<&Post>, usize)> {
         let mut posts: Box<dyn DoubleEndedIterator<Item = &Post>> = Box::new(self.data.iter());
 
         for filter in filters {
@@ -111,28 +119,49 @@ impl Posts {
             }
         }
 
-        Self::page_filter(posts, page_num)
+        Self::page_filter(posts, current_page)
     }
 
     fn page_filter<'p>(
         posts: impl DoubleEndedIterator<Item = &'p Post>,
-        page_num: usize,
-    ) -> Option<Vec<&'p Post>> {
-        let posts = if Config::read().site.list_from_old_to_new {
-            posts
-                .skip((page_num - 1) * Config::read().site.list_posts_count)
-                .take(Config::read().site.list_posts_count)
-                .collect::<Vec<_>>()
-        } else {
-            posts
-                .rev()
-                .skip((page_num - 1) * Config::read().site.list_posts_count)
-                .take(Config::read().site.list_posts_count)
-                .collect::<Vec<_>>()
-        };
+        current_page: usize,
+    ) -> Option<(Vec<&'p Post>, usize)> {
+        let mut result = Vec::with_capacity(Config::read().site.list_posts_count);
+        let mut total = 0;
 
-        if !posts.is_empty() {
-            Some(posts)
+        if Config::read().site.list_from_old_to_new {
+            let mut posts_iter =
+                posts.skip((current_page - 1) * Config::read().site.list_posts_count);
+
+            while let Some(post) = posts_iter.next() {
+                result.push(post);
+                total += 1;
+
+                if total == Config::read().site.list_posts_count {
+                    break;
+                }
+            }
+
+            total += (current_page - 1) * Config::read().site.list_posts_count + posts_iter.count();
+        } else {
+            let mut posts_iter = posts
+                .rev()
+                .skip((current_page - 1) * Config::read().site.list_posts_count);
+
+            while let Some(post) = posts_iter.next() {
+                result.push(post);
+                total += 1;
+
+                if total == Config::read().site.list_posts_count {
+                    break;
+                }
+            }
+
+            total += (current_page - 1) * Config::read().site.list_posts_count + posts_iter.count();
+        }
+
+        if !result.is_empty() {
+            Some((result, total))
         } else {
             None
         }

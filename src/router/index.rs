@@ -5,14 +5,14 @@ pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
     if req.method() == Method::GET {
         let db = DatabaseManager::read().await;
 
-        let page_num = req
+        let current_page = req
             .uri()
             .query()
-            .map_or(1, |query| router::get_page_num(query).unwrap_or(1));
+            .map_or(1, |query| router::get_current_page(query).unwrap_or(1));
 
-        let index = db.posts.get_index(page_num)?;
+        let (posts, total_page) = db.posts.get_index(current_page)?;
 
-        let res = db.template.render_index(index);
+        let res = db.template.render_index(posts, current_page, total_page);
         return Some(res);
     }
     None

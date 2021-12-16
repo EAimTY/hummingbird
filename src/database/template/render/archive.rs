@@ -6,7 +6,13 @@ use crate::database::{Post, TimeRange};
 use hyper::{Body, Response};
 
 impl Template {
-    pub fn render_archive(&self, time_range: TimeRange, posts: Vec<&Post>) -> Response<Body> {
+    pub fn render_archive(
+        &self,
+        time_range: TimeRange,
+        posts: Vec<&Post>,
+        current_page: usize,
+        total_page: usize,
+    ) -> Response<Body> {
         let time_range = match time_range {
             TimeRange::Year { year, .. } => year.to_string(),
             TimeRange::Month { year, month, .. } => format!("{}-{}", year, month),

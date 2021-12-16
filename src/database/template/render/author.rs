@@ -6,7 +6,13 @@ use crate::database::Post;
 use hyper::{Body, Response};
 
 impl Template {
-    pub fn render_author(&self, author: &str, posts: Vec<&Post>) -> Response<Body> {
+    pub fn render_author(
+        &self,
+        author: &str,
+        posts: Vec<&Post>,
+        current_page: usize,
+        total_page: usize,
+    ) -> Response<Body> {
         let site_data = SiteDataMap::from_config();
         let document_data = DocumentDataMap::from_author(author);
 

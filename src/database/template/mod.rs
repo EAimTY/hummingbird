@@ -13,6 +13,7 @@ mod render;
 pub struct Template {
     header: Vec<Part>,
     footer: Vec<Part>,
+    page_nav: Vec<Part>,
     page: Vec<Part>,
     post: Vec<Part>,
     summary: Vec<Part>,
@@ -32,6 +33,13 @@ impl Template {
 
         let footer = fs::read_to_string(path.join("footer.html")).await?;
         let footer = Self::parse_string(&footer, &param_pattern, &|str| match str {
+            "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            _ => Err(anyhow!("Unknown parameter: {}", str)),
+        })?;
+
+        let page_nav = fs::read_to_string(path.join("page_nav.html")).await?;
+        let page_nav = Self::parse_string(&page_nav, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
@@ -77,6 +85,7 @@ impl Template {
         Ok(Self {
             header,
             footer,
+            page_nav,
             page,
             post,
             summary,
@@ -118,6 +127,18 @@ impl Template {
 
     fn footer(&self, site_data: &SiteDataMap, document_data: &DocumentDataMap) -> String {
         self.footer
+            .iter()
+            .map(|part| match part {
+                Part::Static(str) => str,
+                Part::Site(param) => site_data.get(param),
+                Part::Document(param) => document_data.get(param),
+                _ => unreachable!(),
+            })
+            .collect()
+    }
+
+    fn page_nav(&self, site_data: &SiteDataMap, document_data: &DocumentDataMap) -> String {
+        self.page_nav
             .iter()
             .map(|part| match part {
                 Part::Static(str) => str,
