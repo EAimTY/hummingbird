@@ -185,3 +185,38 @@ impl TimeRange {
         }
     }
 }
+
+pub struct ListInfo {
+    pub current_page: usize,
+    pub total_page: usize,
+    pub total_article_counts: usize,
+    pub page_num_pos_in_url_start_idx: usize,
+    pub page_num_pos_in_url_end_idx: usize,
+    pub is_page_num_the_first_param_in_query: bool,
+}
+
+impl ListInfo {
+    pub fn new(
+        current_page: usize,
+        total_article_counts: usize,
+        page_num_pos_in_url: (usize, usize),
+        is_page_num_the_first_param_in_query: bool,
+    ) -> Self {
+        Self {
+            current_page,
+            total_page: total_article_counts / Config::read().site.list_posts_count + 1,
+            total_article_counts,
+            page_num_pos_in_url_start_idx: page_num_pos_in_url.0,
+            page_num_pos_in_url_end_idx: page_num_pos_in_url.0,
+            is_page_num_the_first_param_in_query,
+        }
+    }
+
+    pub fn param_key(&self) -> &str {
+        if self.is_page_num_the_first_param_in_query {
+            "?page="
+        } else {
+            "&page="
+        }
+    }
+}

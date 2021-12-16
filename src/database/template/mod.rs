@@ -47,7 +47,9 @@ impl Template {
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:document.page_nav}" => Ok(Part::Document(DocumentParameter::PageNav)),
             "{:document.current_page}" => Ok(Part::Document(DocumentParameter::CurrentPage)),
-            "{:document.total_page}" => Ok(Part::Document(DocumentParameter::TotalPage)),
+            "{:document.total_article_counts}" => {
+                Ok(Part::Document(DocumentParameter::TotalArticle))
+            }
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 

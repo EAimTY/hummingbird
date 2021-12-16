@@ -1,6 +1,6 @@
 use crate::Config;
 use anyhow::{anyhow, Result};
-use hyper::{Body, Request, Response};
+use hyper::{Body, Request, Response, Uri};
 use matchit::{InsertError, Node};
 use once_cell::sync::OnceCell;
 use std::{collections::HashMap, convert::Infallible};
@@ -254,10 +254,45 @@ fn switch_trailing_slash(path: &str) -> String {
     }
 }
 
-pub fn get_current_page(query: &str) -> Option<usize> {
-    query.split('&').find(|param| param.starts_with("page="))?[5..]
-        .parse()
-        .ok()
+pub fn get_page_num_and_pos_in_url(uri: &Uri) -> (usize, (usize, usize), bool) {
+    let scheme_len = uri.scheme_str().map_or(0, |scheme| scheme.len() + 3);
+    let authority_len = uri
+        .authority()
+        .map_or(0, |authority| authority.as_str().len());
+    let path_len = uri.path().len();
+
+    let query_pos_idx = scheme_len + authority_len + path_len;
+
+    let (query_iter, mut start_idx) = if let Some(query) = uri.query() {
+        (query.split('&'), query_pos_idx)
+    } else {
+        return (1, (query_pos_idx, query_pos_idx), true);
+    };
+
+    for param in query_iter {
+        if let Some(page_num) = param.strip_prefix("page=") {
+            let end_idx = start_idx + param.len() + 1;
+            let is_page_num_the_first_param_in_query = start_idx == query_pos_idx;
+
+            return if let Ok(page_num) = page_num.parse() {
+                (
+                    page_num,
+                    (start_idx, end_idx),
+                    is_page_num_the_first_param_in_query,
+                )
+            } else {
+                (
+                    1,
+                    (start_idx, end_idx),
+                    is_page_num_the_first_param_in_query,
+                )
+            };
+        } else {
+            start_idx += param.len() + 1;
+        }
+    }
+
+    (1, (start_idx, start_idx), false)
 }
 
 #[derive(Clone)]

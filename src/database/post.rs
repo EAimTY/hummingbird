@@ -133,7 +133,7 @@ impl Posts {
             let mut posts_iter =
                 posts.skip((current_page - 1) * Config::read().site.list_posts_count);
 
-            while let Some(post) = posts_iter.next() {
+            for post in posts_iter.by_ref() {
                 result.push(post);
                 total += 1;
 
@@ -148,7 +148,7 @@ impl Posts {
                 .rev()
                 .skip((current_page - 1) * Config::read().site.list_posts_count);
 
-            while let Some(post) = posts_iter.next() {
+            for post in posts_iter.by_ref() {
                 result.push(post);
                 total += 1;
 
