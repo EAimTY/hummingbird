@@ -7,14 +7,16 @@ pub async fn handle(req: &Request<Body>, author: &str) -> Option<Response<Body>>
 
         let post_ids = db.authors.get_posts(author)?;
 
-        let page_num = req
+        let current_page = req
             .uri()
             .query()
-            .map_or(1, |query| router::get_page_num(query).unwrap_or(1));
+            .map_or(1, |query| router::get_current_page(query).unwrap_or(1));
 
-        let posts = db.posts.get_multi(post_ids, page_num)?;
+        let (posts, total_page) = db.posts.get_multi(post_ids, current_page)?;
 
-        let res = db.template.render_author(author, posts);
+        let res = db
+            .template
+            .render_author(author, posts, current_page, total_page);
         return Some(res);
     }
     None

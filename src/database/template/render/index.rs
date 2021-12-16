@@ -6,7 +6,12 @@ use crate::database::Post;
 use hyper::{Body, Response};
 
 impl Template {
-    pub fn render_index(&self, posts: Vec<&Post>) -> Response<Body> {
+    pub fn render_index(
+        &self,
+        posts: Vec<&Post>,
+        current_page: usize,
+        total_page: usize,
+    ) -> Response<Body> {
         let site_data = SiteDataMap::from_config();
         let document_data = DocumentDataMap::from_index();
 

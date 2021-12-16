@@ -8,14 +8,16 @@ pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
         let query = req.uri().query()?;
         let filters = PostFilter::from_uri_query(query)?;
 
-        let page_num = req
+        let current_page = req
             .uri()
             .query()
-            .map_or(1, |query| router::get_page_num(query).unwrap_or(1));
+            .map_or(1, |query| router::get_current_page(query).unwrap_or(1));
 
-        let search_result = db.posts.search(&filters, page_num)?;
+        let (posts, total_page) = db.posts.search(&filters, current_page)?;
 
-        let res = db.template.render_search(filters, search_result);
+        let res = db
+            .template
+            .render_search(filters, posts, current_page, total_page);
         return Some(res);
     }
     None

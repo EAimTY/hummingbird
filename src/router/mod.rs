@@ -254,7 +254,7 @@ fn switch_trailing_slash(path: &str) -> String {
     }
 }
 
-pub fn get_page_num(query: &str) -> Option<usize> {
+pub fn get_current_page(query: &str) -> Option<usize> {
     query.split('&').find(|param| param.starts_with("page="))?[5..]
         .parse()
         .ok()
