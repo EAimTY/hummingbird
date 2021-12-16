@@ -2,7 +2,7 @@ use super::{
     data_map::{DocumentDataMap, SiteDataMap, SummaryDataMap},
     Template,
 };
-use crate::database::Post;
+use crate::database::{ListInfo, Post};
 use hyper::{Body, Request, Response};
 
 impl Template {
@@ -10,11 +10,10 @@ impl Template {
         &self,
         req: &Request<Body>,
         posts: Vec<&Post>,
-        current_page: usize,
-        total_page: usize,
+        list_info: ListInfo,
     ) -> Response<Body> {
         let site_data = SiteDataMap::from_config();
-        let document_data = DocumentDataMap::from_index(req, current_page, total_page);
+        let document_data = DocumentDataMap::from_index(req, list_info);
 
         let header = self.header(&site_data, &document_data);
         let posts = posts

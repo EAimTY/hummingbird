@@ -1,20 +1,24 @@
-use crate::{router, DatabaseManager};
+use crate::{database::ListInfo, router, DatabaseManager};
 use hyper::{Body, Method, Request, Response};
 
 pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
     if req.method() == Method::GET {
         let db = DatabaseManager::read().await;
 
-        let current_page = req
-            .uri()
-            .query()
-            .map_or(1, |query| router::get_current_page(query).unwrap_or(1));
+        let (current_page, page_num_pos_in_url, is_page_num_the_first_param_in_query) =
+            router::get_page_num_and_pos_in_url(req.uri());
 
-        let (posts, total_page) = db.posts.get_index(current_page)?;
+        let (posts, total_article_counts) = db.posts.get_index(current_page)?;
 
-        let res = db
-            .template
-            .render_index(req, posts, current_page, total_page);
+        let list_info = ListInfo::new(
+            current_page,
+            total_article_counts,
+            page_num_pos_in_url,
+            is_page_num_the_first_param_in_query,
+        );
+
+        let res = db.template.render_index(req, posts, list_info);
+
         return Some(res);
     }
     None

@@ -2,7 +2,7 @@ use super::{
     data_map::{DocumentDataMap, SiteDataMap, SummaryDataMap},
     Template,
 };
-use crate::database::{Post, TimeRange};
+use crate::database::{ListInfo, Post, TimeRange};
 use hyper::{Body, Request, Response};
 
 impl Template {
@@ -11,12 +11,10 @@ impl Template {
         req: &Request<Body>,
         time_range: TimeRange,
         posts: Vec<&Post>,
-        current_page: usize,
-        total_page: usize,
+        list_info: ListInfo,
     ) -> Response<Body> {
         let site_data = SiteDataMap::from_config();
-        let document_data =
-            DocumentDataMap::from_time_range(req, &time_range, current_page, total_page);
+        let document_data = DocumentDataMap::from_time_range(req, &time_range, list_info);
 
         let header = self.header(&site_data, &document_data);
         let posts = posts

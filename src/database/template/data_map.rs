@@ -1,6 +1,6 @@
 use super::{markdown, parameter::*};
 use crate::{
-    database::{Page, Post, TimeRange},
+    database::{ListInfo, Page, Post, TimeRange},
     Config,
 };
 use hyper::{Body, Request, Uri};
@@ -55,43 +55,38 @@ impl<'d> DocumentDataMap<'d> {
         }
     }
 
-    pub fn from_index(req: &'d Request<Body>, current_page: usize, total_page: usize) -> Self {
+    pub fn from_index(req: &'d Request<Body>, list_info: ListInfo) -> Self {
         Self {
             data: (
                 Cow::Borrowed("Index"),
                 req.uri(),
-                Cow::Owned(Self::gen_page_nav(current_page, total_page)),
-                current_page,
-                total_page,
+                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+                list_info.current_page,
+                list_info.total_article_counts,
             ),
         }
     }
 
-    pub fn from_search(req: &'d Request<Body>, current_page: usize, total_page: usize) -> Self {
+    pub fn from_search(req: &'d Request<Body>, list_info: ListInfo) -> Self {
         Self {
             data: (
                 Cow::Borrowed("Search"),
                 req.uri(),
-                Cow::Owned(Self::gen_page_nav(current_page, total_page)),
-                current_page,
-                total_page,
+                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+                list_info.current_page,
+                list_info.total_article_counts,
             ),
         }
     }
 
-    pub fn from_author(
-        req: &'d Request<Body>,
-        author: &'d str,
-        current_page: usize,
-        total_page: usize,
-    ) -> Self {
+    pub fn from_author(req: &'d Request<Body>, author: &'d str, list_info: ListInfo) -> Self {
         Self {
             data: (
                 Cow::Borrowed(author),
                 req.uri(),
-                Cow::Owned(Self::gen_page_nav(current_page, total_page)),
-                current_page,
-                total_page,
+                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+                list_info.current_page,
+                list_info.total_article_counts,
             ),
         }
     }
@@ -99,8 +94,7 @@ impl<'d> DocumentDataMap<'d> {
     pub fn from_time_range(
         req: &'d Request<Body>,
         time_range: &'d TimeRange,
-        current_page: usize,
-        total_page: usize,
+        list_info: ListInfo,
     ) -> Self {
         let time_range = match time_range {
             TimeRange::Year { year, .. } => year.to_string(),
@@ -112,9 +106,9 @@ impl<'d> DocumentDataMap<'d> {
             data: (
                 Cow::Owned(time_range),
                 req.uri(),
-                Cow::Owned(Self::gen_page_nav(current_page, total_page)),
-                current_page,
-                total_page,
+                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+                list_info.current_page,
+                list_info.total_article_counts,
             ),
         }
     }
@@ -137,19 +131,61 @@ impl<'d> DocumentDataMap<'d> {
             DocumentParameter::Url => Cow::Owned(self.data.1.to_string()),
             DocumentParameter::PageNav => Cow::Borrowed(&self.data.2),
             DocumentParameter::CurrentPage => Cow::Owned(self.data.3.to_string()),
-            DocumentParameter::TotalPage => Cow::Owned(self.data.4.to_string()),
+            DocumentParameter::TotalArticle => Cow::Owned(self.data.4.to_string()),
         }
     }
 
-    fn gen_page_nav(current_page: usize, total_page: usize) -> String {
+    fn gen_page_nav(url: &Uri, list_info: &ListInfo) -> String {
+        let url = url.to_string();
+        let url_part_front = &url[..list_info.page_num_pos_in_url_start_idx];
+        let url_part_back = &url[list_info.page_num_pos_in_url_end_idx..];
+
         let mut result = String::from(r#"<ol id="page_nav">"#);
 
-        if current_page != 1 {
-            result.push_str(r#"<li id="prev"><a herf="">prev</a></li>"#);
+        if list_info.current_page != 1 {
+            result.push_str(r#"<li id="prev"><a herf=""#);
+            result.push_str(url_part_front);
+            result.push_str(list_info.param_key());
+            result.push_str(&(list_info.current_page - 1).to_string());
+            result.push_str(url_part_back);
+            result.push_str(r#"">prev</a></li>"#);
         }
 
-        if current_page != total_page {
-            result.push_str(r#"<li id="next"><a herf="">next</a></li>"#);
+        for page_num in 1..list_info.current_page {
+            result.push_str(r#"<li id="current"><a herf=""#);
+            result.push_str(url_part_front);
+            result.push_str(list_info.param_key());
+            result.push_str(&page_num.to_string());
+            result.push_str(url_part_back);
+            result.push_str(r#"">"#);
+            result.push_str(&page_num.to_string());
+            result.push_str(r#"</a></li>"#);
+        }
+
+        result.push_str(r#"<li id="current"><a herf=""#);
+        result.push_str(&url);
+        result.push_str(r#"">"#);
+        result.push_str(&(list_info.current_page).to_string());
+        result.push_str(r#"</a></li>"#);
+
+        if list_info.current_page != list_info.total_page {
+            for page_num in list_info.current_page + 1..=list_info.total_page {
+                result.push_str(r#"<li id="current"><a herf=""#);
+                result.push_str(url_part_front);
+                result.push_str(list_info.param_key());
+                result.push_str(&page_num.to_string());
+                result.push_str(url_part_back);
+                result.push_str(r#"">"#);
+                result.push_str(&page_num.to_string());
+                result.push_str(r#"</a></li>"#);
+            }
+
+            result.push_str(r#"<li id="next"><a herf=""#);
+            result.push_str(url_part_front);
+            result.push_str(list_info.param_key());
+            result.push_str(&(list_info.current_page + 1).to_string());
+            result.push_str(url_part_back);
+            result.push_str(r#"">next</a></li>"#);
         }
 
         result.push_str(r#"</ol>"#);

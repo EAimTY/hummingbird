@@ -9,7 +9,7 @@ pub enum DocumentParameter {
     Url,
     PageNav,
     CurrentPage,
-    TotalPage,
+    TotalArticle,
 }
 
 #[derive(Clone, Debug)]
