@@ -17,7 +17,7 @@ pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
 
         let res = db
             .template
-            .render_search(filters, posts, current_page, total_page);
+            .render_search(req, filters, posts, current_page, total_page);
         return Some(res);
     }
     None

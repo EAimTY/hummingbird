@@ -6,6 +6,10 @@ pub enum SiteParameter {
 #[derive(Clone, Debug)]
 pub enum DocumentParameter {
     Title,
+    Url,
+    PageNav,
+    CurrentPage,
+    TotalPage,
 }
 
 #[derive(Clone, Debug)]

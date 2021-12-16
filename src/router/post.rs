@@ -7,7 +7,7 @@ pub async fn handle(req: &Request<Body>, post_id: usize) -> Option<Response<Body
 
         let post = db.posts.get(post_id);
 
-        let res = db.template.render_post(post);
+        let res = db.template.render_post(req, post);
         return Some(res);
     }
     None

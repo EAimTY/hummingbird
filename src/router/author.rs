@@ -16,7 +16,7 @@ pub async fn handle(req: &Request<Body>, author: &str) -> Option<Response<Body>>
 
         let res = db
             .template
-            .render_author(author, posts, current_page, total_page);
+            .render_author(req, author, posts, current_page, total_page);
         return Some(res);
     }
     None

@@ -20,7 +20,7 @@ pub async fn handle(
 
         let res = db
             .template
-            .render_archive(time_range, posts, current_page, total_page);
+            .render_archive(req, time_range, posts, current_page, total_page);
         return Some(res);
     }
     None

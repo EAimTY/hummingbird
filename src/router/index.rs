@@ -12,7 +12,9 @@ pub async fn handle(req: &Request<Body>) -> Option<Response<Body>> {
 
         let (posts, total_page) = db.posts.get_index(current_page)?;
 
-        let res = db.template.render_index(posts, current_page, total_page);
+        let res = db
+            .template
+            .render_index(req, posts, current_page, total_page);
         return Some(res);
     }
     None

@@ -7,7 +7,7 @@ pub async fn handle(req: &Request<Body>, page_id: usize) -> Option<Response<Body
 
         let page = db.pages.get(page_id);
 
-        let res = db.template.render_page(page);
+        let res = db.template.render_page(req, page);
         return Some(res);
     }
     None

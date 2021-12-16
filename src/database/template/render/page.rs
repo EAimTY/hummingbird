@@ -3,12 +3,12 @@ use super::{
     Template,
 };
 use crate::database::Page;
-use hyper::{Body, Response};
+use hyper::{Body, Request, Response};
 
 impl Template {
-    pub fn render_page(&self, page: &Page) -> Response<Body> {
+    pub fn render_page(&self, req: &Request<Body>, page: &Page) -> Response<Body> {
         let site_data = SiteDataMap::from_config();
-        let document_data = DocumentDataMap::from_page(page);
+        let document_data = DocumentDataMap::from_page(req, page);
 
         let page_data = PageDataMap::from_page(page);
 
