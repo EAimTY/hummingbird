@@ -3,12 +3,12 @@ use super::{
     Template,
 };
 use crate::database::Post;
-use hyper::{Body, Response};
+use hyper::{Body, Request, Response};
 
 impl Template {
-    pub fn render_post(&self, post: &Post) -> Response<Body> {
+    pub fn render_post(&self, req: &Request<Body>, post: &Post) -> Response<Body> {
         let site_data = SiteDataMap::from_config();
-        let document_data = DocumentDataMap::from_post(post);
+        let document_data = DocumentDataMap::from_post(req, post);
 
         let post_data = PostDataMap::from_post(post);
 

@@ -1,7 +1,7 @@
 use self::{data_map::*, parameter::*};
 use anyhow::{anyhow, Result};
 use regex::Regex;
-use std::path::Path;
+use std::{borrow::Cow, path::Path};
 use tokio::fs;
 
 pub mod data_map;
@@ -22,12 +22,13 @@ pub struct Template {
 
 impl Template {
     pub async fn from_directory(path: &Path) -> Result<Self> {
-        let param_pattern = Regex::new(r"\{:[a-z.]+\}").unwrap();
+        let param_pattern = Regex::new(r"\{:[a-z._]+\}").unwrap();
 
         let header = fs::read_to_string(path.join("header.html")).await?;
         let header = Self::parse_string(&header, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -35,6 +36,7 @@ impl Template {
         let footer = Self::parse_string(&footer, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -42,6 +44,10 @@ impl Template {
         let page_nav = Self::parse_string(&page_nav, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
+            "{:document.page_nav}" => Ok(Part::Document(DocumentParameter::PageNav)),
+            "{:document.current_page}" => Ok(Part::Document(DocumentParameter::CurrentPage)),
+            "{:document.total_page}" => Ok(Part::Document(DocumentParameter::TotalPage)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -49,6 +55,7 @@ impl Template {
         let page = Self::parse_string(&page, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:page.title}" => Ok(Part::Page(PageParameter::Title)),
             "{:page.link}" => Ok(Part::Page(PageParameter::Url)),
             "{:page.content}" => Ok(Part::Page(PageParameter::Content)),
@@ -59,6 +66,7 @@ impl Template {
         let post = Self::parse_string(&post, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:post.title}" => Ok(Part::Post(PostParameter::Title)),
             "{:post.link}" => Ok(Part::Post(PostParameter::Url)),
             "{:post.content}" => Ok(Part::Post(PostParameter::Content)),
@@ -69,6 +77,7 @@ impl Template {
         let summary = Self::parse_string(&summary, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
             "{:summary.link}" => Ok(Part::Summary(SummaryParameter::Url)),
             "{:summary.content}" => Ok(Part::Summary(SummaryParameter::Content)),
@@ -79,6 +88,7 @@ impl Template {
         let not_found = Self::parse_string(&not_found, &param_pattern, &|str| match str {
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
+            "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -117,7 +127,7 @@ impl Template {
         self.header
             .iter()
             .map(|part| match part {
-                Part::Static(str) => str,
+                Part::Static(str) => Cow::Borrowed(str.as_str()),
                 Part::Site(param) => site_data.get(param),
                 Part::Document(param) => document_data.get(param),
                 _ => unreachable!(),
@@ -129,7 +139,7 @@ impl Template {
         self.footer
             .iter()
             .map(|part| match part {
-                Part::Static(str) => str,
+                Part::Static(str) => Cow::Borrowed(str.as_str()),
                 Part::Site(param) => site_data.get(param),
                 Part::Document(param) => document_data.get(param),
                 _ => unreachable!(),
@@ -141,7 +151,7 @@ impl Template {
         self.page_nav
             .iter()
             .map(|part| match part {
-                Part::Static(str) => str,
+                Part::Static(str) => Cow::Borrowed(str.as_str()),
                 Part::Site(param) => site_data.get(param),
                 Part::Document(param) => document_data.get(param),
                 _ => unreachable!(),
@@ -158,7 +168,7 @@ impl Template {
         self.page
             .iter()
             .map(|part| match part {
-                Part::Static(str) => str,
+                Part::Static(str) => Cow::Borrowed(str.as_str()),
                 Part::Site(param) => site_data.get(param),
                 Part::Document(param) => document_data.get(param),
                 Part::Page(param) => page_data.get(param),
@@ -176,7 +186,7 @@ impl Template {
         self.post
             .iter()
             .map(|part| match part {
-                Part::Static(str) => str,
+                Part::Static(str) => Cow::Borrowed(str.as_str()),
                 Part::Site(param) => site_data.get(param),
                 Part::Document(param) => document_data.get(param),
                 Part::Post(param) => post_data.get(param),
@@ -194,7 +204,7 @@ impl Template {
         self.summary
             .iter()
             .map(|part| match part {
-                Part::Static(str) => str,
+                Part::Static(str) => Cow::Borrowed(str.as_str()),
                 Part::Site(param) => site_data.get(param),
                 Part::Document(param) => document_data.get(param),
                 Part::Summary(param) => summary_data.get(param),
@@ -207,7 +217,7 @@ impl Template {
         self.not_found
             .iter()
             .map(|part| match part {
-                Part::Static(str) => str,
+                Part::Static(str) => Cow::Borrowed(str.as_str()),
                 Part::Site(param) => site_data.get(param),
                 Part::Document(param) => document_data.get(param),
                 _ => unreachable!(),

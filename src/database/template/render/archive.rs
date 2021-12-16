@@ -3,24 +3,20 @@ use super::{
     Template,
 };
 use crate::database::{Post, TimeRange};
-use hyper::{Body, Response};
+use hyper::{Body, Request, Response};
 
 impl Template {
     pub fn render_archive(
         &self,
+        req: &Request<Body>,
         time_range: TimeRange,
         posts: Vec<&Post>,
         current_page: usize,
         total_page: usize,
     ) -> Response<Body> {
-        let time_range = match time_range {
-            TimeRange::Year { year, .. } => year.to_string(),
-            TimeRange::Month { year, month, .. } => format!("{}-{}", year, month),
-            TimeRange::Free { .. } => unreachable!(),
-        };
-
         let site_data = SiteDataMap::from_config();
-        let document_data = DocumentDataMap::from_time_range(&time_range);
+        let document_data =
+            DocumentDataMap::from_time_range(req, &time_range, current_page, total_page);
 
         let header = self.header(&site_data, &document_data);
         let posts = posts
@@ -30,8 +26,12 @@ impl Template {
                 self.summary(&site_data, &document_data, &summary_data)
             })
             .collect::<String>();
+        let page_nav = self.page_nav(&site_data, &document_data);
         let footer = self.footer(&site_data, &document_data);
 
-        Response::new(Body::from(format!("{}{}{}", header, posts, footer)))
+        Response::new(Body::from(format!(
+            "{}{}{}{}",
+            header, posts, page_nav, footer
+        )))
     }
 }
