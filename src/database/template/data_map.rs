@@ -9,13 +9,11 @@ use hyper::{Body, Request, Uri};
 use std::borrow::Cow;
 
 pub struct SiteDataMap<'d> {
-    data: (
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-    ),
+    url: Cow<'d, str>,
+    name: Cow<'d, str>,
+    description: Cow<'d, str>,
+    page_list: Cow<'d, str>,
+    recent_posts: Cow<'d, str>,
 }
 
 impl<'d> SiteDataMap<'d> {
@@ -46,36 +44,32 @@ impl<'d> SiteDataMap<'d> {
         recent_posts.push_str(r#"</ol>"#);
 
         Self {
-            data: (
-                Cow::Borrowed(&Config::read().site.url),
-                Cow::Borrowed(&Config::read().site.name),
-                Cow::Borrowed(Config::read().site.description.as_deref().unwrap_or("")),
-                Cow::Owned(page_list),
-                Cow::Owned(recent_posts),
-            ),
+            url: Cow::Borrowed(&Config::read().site.url),
+            name: Cow::Borrowed(&Config::read().site.name),
+            description: Cow::Borrowed(Config::read().site.description.as_deref().unwrap_or("")),
+            page_list: Cow::Owned(page_list),
+            recent_posts: Cow::Owned(recent_posts),
         }
     }
 
     pub fn get(&'d self, param: &SiteParameter) -> Cow<'d, str> {
         match param {
-            SiteParameter::Url => Cow::Borrowed(&self.data.0),
-            SiteParameter::Name => Cow::Borrowed(&self.data.1),
-            SiteParameter::Description => Cow::Borrowed(&self.data.2),
-            SiteParameter::PageList => Cow::Borrowed(&self.data.3),
-            SiteParameter::RecentPosts => Cow::Borrowed(&self.data.4),
+            SiteParameter::Url => Cow::Borrowed(&self.url),
+            SiteParameter::Name => Cow::Borrowed(&self.name),
+            SiteParameter::Description => Cow::Borrowed(&self.description),
+            SiteParameter::PageList => Cow::Borrowed(&self.page_list),
+            SiteParameter::RecentPosts => Cow::Borrowed(&self.recent_posts),
         }
     }
 }
 
 pub struct DocumentDataMap<'d> {
-    data: (
-        Cow<'d, str>,
-        &'d Uri,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        usize,
-        usize,
-    ),
+    title: Cow<'d, str>,
+    url: &'d Uri,
+    breadcrumbs: Cow<'d, str>,
+    page_nav: Cow<'d, str>,
+    current_page_num_in_list: usize,
+    total_num_of_articles_in_list: usize,
 }
 
 impl<'d> DocumentDataMap<'d> {
@@ -83,40 +77,34 @@ impl<'d> DocumentDataMap<'d> {
 
     pub fn from_page(req: &'d Request<Body>, page: &'d Page) -> Self {
         Self {
-            data: (
-                Cow::Borrowed(&page.title),
-                req.uri(),
-                Cow::Owned(format!("<span>Page: {}</span>", page.title)),
-                Cow::Borrowed(Self::EMPTY_PAGE_NAV),
-                0,
-                0,
-            ),
+            title: Cow::Borrowed(&page.title),
+            url: req.uri(),
+            breadcrumbs: Cow::Owned(format!("<span>Page: {}</span>", page.title)),
+            page_nav: Cow::Borrowed(Self::EMPTY_PAGE_NAV),
+            current_page_num_in_list: 0,
+            total_num_of_articles_in_list: 0,
         }
     }
 
     pub fn from_post(req: &'d Request<Body>, post: &'d Post) -> Self {
         Self {
-            data: (
-                Cow::Borrowed(&post.title),
-                req.uri(),
-                Cow::Owned(format!("<span>Post: {}</span>", post.title)),
-                Cow::Borrowed(Self::EMPTY_PAGE_NAV),
-                0,
-                0,
-            ),
+            title: Cow::Borrowed(&post.title),
+            url: req.uri(),
+            breadcrumbs: Cow::Owned(format!("<span>Post: {}</span>", post.title)),
+            page_nav: Cow::Borrowed(Self::EMPTY_PAGE_NAV),
+            current_page_num_in_list: 0,
+            total_num_of_articles_in_list: 0,
         }
     }
 
     pub fn from_index(req: &'d Request<Body>, list_info: ListInfo) -> Self {
         Self {
-            data: (
-                Cow::Borrowed(""),
-                req.uri(),
-                Cow::Borrowed("<span></span>"),
-                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page_num_in_list,
-                list_info.total_num_of_articles_in_list,
-            ),
+            title: Cow::Borrowed(""),
+            url: req.uri(),
+            breadcrumbs: Cow::Borrowed("<span></span>"),
+            page_nav: Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+            current_page_num_in_list: list_info.current_page_num_in_list,
+            total_num_of_articles_in_list: list_info.total_num_of_articles_in_list,
         }
     }
 
@@ -125,38 +113,34 @@ impl<'d> DocumentDataMap<'d> {
         filters: Vec<PostFilter>,
         list_info: ListInfo,
     ) -> Self {
-        let mut breadcrumb = String::new();
+        let mut breadcrumbs = String::new();
         filters.iter().for_each(|filter| {
-            breadcrumb.push_str(r#"<span>"#);
+            breadcrumbs.push_str(r#"<span>"#);
             let (breadcrumb_type, breadcrumb_value) = filter.to_breadcrumb();
-            breadcrumb.push_str(breadcrumb_type);
-            breadcrumb.push_str(r#": "#);
-            breadcrumb.push_str(&breadcrumb_value);
-            breadcrumb.push_str(r#"</span>"#);
+            breadcrumbs.push_str(breadcrumb_type);
+            breadcrumbs.push_str(r#": "#);
+            breadcrumbs.push_str(&breadcrumb_value);
+            breadcrumbs.push_str(r#"</span>"#);
         });
 
         Self {
-            data: (
-                Cow::Borrowed("Search"),
-                req.uri(),
-                Cow::Owned(breadcrumb),
-                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page_num_in_list,
-                list_info.total_num_of_articles_in_list,
-            ),
+            title: Cow::Borrowed("Search"),
+            url: req.uri(),
+            breadcrumbs: Cow::Owned(breadcrumbs),
+            page_nav: Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+            current_page_num_in_list: list_info.current_page_num_in_list,
+            total_num_of_articles_in_list: list_info.total_num_of_articles_in_list,
         }
     }
 
     pub fn from_author(req: &'d Request<Body>, author: &'d str, list_info: ListInfo) -> Self {
         Self {
-            data: (
-                Cow::Owned(format!("Author: {}", author)),
-                req.uri(),
-                Cow::Owned(format!("<span>Author: {}</span>", author)),
-                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page_num_in_list,
-                list_info.total_num_of_articles_in_list,
-            ),
+            title: Cow::Owned(format!("Author: {}", author)),
+            url: req.uri(),
+            breadcrumbs: Cow::Owned(format!("<span>Author: {}</span>", author)),
+            page_nav: Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+            current_page_num_in_list: list_info.current_page_num_in_list,
+            total_num_of_articles_in_list: list_info.total_num_of_articles_in_list,
         }
     }
 
@@ -165,41 +149,41 @@ impl<'d> DocumentDataMap<'d> {
         time_range: &'d TimeRange,
         list_info: ListInfo,
     ) -> Self {
-        let breadcrumb = format!("<span>{}</span>", time_range);
+        let breadcrumbs = format!("<span>{}</span>", time_range);
 
         Self {
-            data: (
-                Cow::Owned(time_range.to_string()),
-                req.uri(),
-                Cow::Owned(breadcrumb),
-                Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page_num_in_list,
-                list_info.total_num_of_articles_in_list,
-            ),
+            title: Cow::Owned(time_range.to_string()),
+            url: req.uri(),
+            breadcrumbs: Cow::Owned(breadcrumbs),
+            page_nav: Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
+            current_page_num_in_list: list_info.current_page_num_in_list,
+            total_num_of_articles_in_list: list_info.total_num_of_articles_in_list,
         }
     }
 
     pub fn from_not_found(req: &'d Request<Body>) -> Self {
         Self {
-            data: (
-                Cow::Borrowed("Not Found"),
-                req.uri(),
-                Cow::Borrowed("<span>Not Found</span>"),
-                Cow::Borrowed(Self::EMPTY_PAGE_NAV),
-                0,
-                0,
-            ),
+            title: Cow::Borrowed("Not Found"),
+            url: req.uri(),
+            breadcrumbs: Cow::Borrowed("<span>Not Found</span>"),
+            page_nav: Cow::Borrowed(Self::EMPTY_PAGE_NAV),
+            current_page_num_in_list: 0,
+            total_num_of_articles_in_list: 0,
         }
     }
 
     pub fn get(&'d self, param: &DocumentParameter) -> Cow<'d, str> {
         match param {
-            DocumentParameter::Title => Cow::Borrowed(&self.data.0),
-            DocumentParameter::Url => Cow::Owned(self.data.1.to_string()),
-            DocumentParameter::Breadcrumb => Cow::Borrowed(&self.data.2),
-            DocumentParameter::PageNav => Cow::Borrowed(&self.data.3),
-            DocumentParameter::CurrentPageNumInList => Cow::Owned(self.data.4.to_string()),
-            DocumentParameter::TotalNumOfArticleInList => Cow::Owned(self.data.5.to_string()),
+            DocumentParameter::Title => Cow::Borrowed(&self.title),
+            DocumentParameter::Url => Cow::Owned(self.url.to_string()),
+            DocumentParameter::Breadcrumb => Cow::Borrowed(&self.breadcrumbs),
+            DocumentParameter::PageNav => Cow::Borrowed(&self.page_nav),
+            DocumentParameter::CurrentPageNumInList => {
+                Cow::Owned(self.current_page_num_in_list.to_string())
+            }
+            DocumentParameter::TotalNumOfArticleInList => {
+                Cow::Owned(self.total_num_of_articles_in_list.to_string())
+            }
         }
     }
 
@@ -263,88 +247,78 @@ impl<'d> DocumentDataMap<'d> {
 }
 
 pub struct PageDataMap<'d> {
-    data: (
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        &'d DateTime<Tz>,
-        &'d DateTime<Tz>,
-    ),
+    title: Cow<'d, str>,
+    url: Cow<'d, str>,
+    content: Cow<'d, str>,
+    author: Cow<'d, str>,
+    create_time: &'d DateTime<Tz>,
+    modify_time: &'d DateTime<Tz>,
 }
 
 impl<'d> PageDataMap<'d> {
     pub fn from_page(page: &'d Page) -> Self {
         Self {
-            data: (
-                Cow::Borrowed(&page.title),
-                Cow::Borrowed(&page.url),
-                Cow::Owned(markdown::md_to_html(&page.content)),
-                Cow::Borrowed(page.author.as_deref().unwrap_or("Anonymous")),
-                &page.create_time,
-                &page.modify_time,
-            ),
+            title: Cow::Borrowed(&page.title),
+            url: Cow::Borrowed(&page.url),
+            content: Cow::Owned(markdown::md_to_html(&page.content)),
+            author: Cow::Borrowed(page.author.as_deref().unwrap_or("Anonymous")),
+            create_time: &page.create_time,
+            modify_time: &page.modify_time,
         }
     }
 
     pub fn get(&'d self, param: &PageParameter) -> Cow<'d, str> {
         match param {
-            PageParameter::Title => Cow::Borrowed(&self.data.0),
-            PageParameter::Url => Cow::Borrowed(&self.data.1),
-            PageParameter::Content => Cow::Borrowed(&self.data.2),
-            PageParameter::Author => Cow::Borrowed(&self.data.3),
-            PageParameter::CreateTime => Cow::Owned(self.data.4.to_string()),
-            PageParameter::ModifyTime => Cow::Owned(self.data.5.to_string()),
+            PageParameter::Title => Cow::Borrowed(&self.title),
+            PageParameter::Url => Cow::Borrowed(&self.url),
+            PageParameter::Content => Cow::Borrowed(&self.content),
+            PageParameter::Author => Cow::Borrowed(&self.author),
+            PageParameter::CreateTime => Cow::Owned(self.create_time.to_string()),
+            PageParameter::ModifyTime => Cow::Owned(self.modify_time.to_string()),
         }
     }
 }
 
 pub struct PostDataMap<'d> {
-    data: (
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        &'d DateTime<Tz>,
-        &'d DateTime<Tz>,
-    ),
+    title: Cow<'d, str>,
+    url: Cow<'d, str>,
+    content: Cow<'d, str>,
+    author: Cow<'d, str>,
+    create_time: &'d DateTime<Tz>,
+    modify_time: &'d DateTime<Tz>,
 }
 
 impl<'d> PostDataMap<'d> {
     pub fn from_post(post: &'d Post) -> Self {
         Self {
-            data: (
-                Cow::Borrowed(&post.title),
-                Cow::Borrowed(&post.url),
-                Cow::Owned(markdown::md_to_html(&post.content)),
-                Cow::Borrowed(post.author.as_deref().unwrap_or("Anonymous")),
-                &post.create_time,
-                &post.modify_time,
-            ),
+            title: Cow::Borrowed(&post.title),
+            url: Cow::Borrowed(&post.url),
+            content: Cow::Owned(markdown::md_to_html(&post.content)),
+            author: Cow::Borrowed(post.author.as_deref().unwrap_or("Anonymous")),
+            create_time: &post.create_time,
+            modify_time: &post.modify_time,
         }
     }
 
     pub fn get(&'d self, param: &PostParameter) -> Cow<'d, str> {
         match param {
-            PostParameter::Title => Cow::Borrowed(&self.data.0),
-            PostParameter::Url => Cow::Borrowed(&self.data.1),
-            PostParameter::Content => Cow::Borrowed(&self.data.2),
-            PostParameter::Author => Cow::Borrowed(&self.data.3),
-            PostParameter::CreateTime => Cow::Owned(self.data.4.to_string()),
-            PostParameter::ModifyTime => Cow::Owned(self.data.5.to_string()),
+            PostParameter::Title => Cow::Borrowed(&self.title),
+            PostParameter::Url => Cow::Borrowed(&self.url),
+            PostParameter::Content => Cow::Borrowed(&self.content),
+            PostParameter::Author => Cow::Borrowed(&self.author),
+            PostParameter::CreateTime => Cow::Owned(self.create_time.to_string()),
+            PostParameter::ModifyTime => Cow::Owned(self.modify_time.to_string()),
         }
     }
 }
 
 pub struct SummaryDataMap<'d> {
-    data: (
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        Cow<'d, str>,
-        &'d DateTime<Tz>,
-        &'d DateTime<Tz>,
-    ),
+    title: Cow<'d, str>,
+    url: Cow<'d, str>,
+    summary: Cow<'d, str>,
+    author: Cow<'d, str>,
+    create_time: &'d DateTime<Tz>,
+    modify_time: &'d DateTime<Tz>,
 }
 
 impl<'d> SummaryDataMap<'d> {
@@ -356,25 +330,23 @@ impl<'d> SummaryDataMap<'d> {
         let post_summary = &post.content[..more_indicator_idx].trim_end();
 
         Self {
-            data: (
-                Cow::Borrowed(&post.title),
-                Cow::Borrowed(&post.url),
-                Cow::Owned(markdown::md_to_html(post_summary)),
-                Cow::Borrowed(post.author.as_deref().unwrap_or("Anonymous")),
-                &post.create_time,
-                &post.modify_time,
-            ),
+            title: Cow::Borrowed(&post.title),
+            url: Cow::Borrowed(&post.url),
+            summary: Cow::Owned(markdown::md_to_html(post_summary)),
+            author: Cow::Borrowed(post.author.as_deref().unwrap_or("Anonymous")),
+            create_time: &post.create_time,
+            modify_time: &post.modify_time,
         }
     }
 
     pub fn get(&'d self, param: &SummaryParameter) -> Cow<'d, str> {
         match param {
-            SummaryParameter::Title => Cow::Borrowed(&self.data.0),
-            SummaryParameter::Url => Cow::Borrowed(&self.data.1),
-            SummaryParameter::Summary => Cow::Borrowed(&self.data.2),
-            SummaryParameter::Author => Cow::Borrowed(&self.data.3),
-            SummaryParameter::CreateTime => Cow::Owned(self.data.4.to_string()),
-            SummaryParameter::ModifyTime => Cow::Owned(self.data.5.to_string()),
+            SummaryParameter::Title => Cow::Borrowed(&self.title),
+            SummaryParameter::Url => Cow::Borrowed(&self.url),
+            SummaryParameter::Summary => Cow::Borrowed(&self.summary),
+            SummaryParameter::Author => Cow::Borrowed(&self.author),
+            SummaryParameter::CreateTime => Cow::Owned(self.create_time.to_string()),
+            SummaryParameter::ModifyTime => Cow::Owned(self.modify_time.to_string()),
         }
     }
 }
