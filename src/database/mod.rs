@@ -187,9 +187,9 @@ impl TimeRange {
 }
 
 pub struct ListInfo {
-    pub current_page: usize,
+    pub current_page_num_in_list: usize,
     pub total_page: usize,
-    pub total_article_counts: usize,
+    pub total_num_of_articles_in_list: usize,
     pub page_num_pos_in_url_start_idx: usize,
     pub page_num_pos_in_url_end_idx: usize,
     pub is_page_num_the_first_param_in_query: bool,
@@ -197,15 +197,15 @@ pub struct ListInfo {
 
 impl ListInfo {
     pub fn new(
-        current_page: usize,
-        total_article_counts: usize,
+        current_page_num_in_list: usize,
+        total_num_of_articles_in_list: usize,
         page_num_pos_in_url: (usize, usize),
         is_page_num_the_first_param_in_query: bool,
     ) -> Self {
         Self {
-            current_page,
-            total_page: total_article_counts / Config::read().site.list_posts_count + 1,
-            total_article_counts,
+            current_page_num_in_list,
+            total_page: total_num_of_articles_in_list / Config::read().site.list_posts_count + 1,
+            total_num_of_articles_in_list,
             page_num_pos_in_url_start_idx: page_num_pos_in_url.0,
             page_num_pos_in_url_end_idx: page_num_pos_in_url.0,
             is_page_num_the_first_param_in_query,

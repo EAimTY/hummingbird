@@ -1,22 +1,55 @@
 use super::{markdown, parameter::*};
 use crate::{
-    database::{ListInfo, Page, Post, TimeRange},
+    database::{Database, ListInfo, Page, Post, TimeRange},
     Config,
 };
 use hyper::{Body, Request, Uri};
 use std::borrow::Cow;
 
 pub struct SiteDataMap<'d> {
-    data: (Cow<'d, str>, Cow<'d, str>, Cow<'d, str>),
+    data: (
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+    ),
 }
 
 impl<'d> SiteDataMap<'d> {
-    pub fn from_config_and_db() -> Self {
+    pub fn from_config_and_db(db: &Database) -> Self {
+        let mut page_list = String::from(r#"<ol id="page_list">"#);
+        db.pages.data.iter().for_each(|page| {
+            page_list.push_str(r#"<li><a herf=""#);
+            page_list.push_str(&page.url);
+            page_list.push_str(r#"">"#);
+            page_list.push_str(&page.title);
+            page_list.push_str(r#"</a></li>"#);
+        });
+        page_list.push_str(r#"</ol>"#);
+
+        let mut recent_posts = String::from(r#"<ol id="recent_posts">"#);
+        db.posts
+            .data
+            .iter()
+            .rev()
+            .take(Config::read().site.list_posts_count)
+            .for_each(|post| {
+                recent_posts.push_str(r#"<li><a herf=""#);
+                recent_posts.push_str(&post.url);
+                recent_posts.push_str(r#"">"#);
+                recent_posts.push_str(&post.title);
+                recent_posts.push_str(r#"</a></li>"#);
+            });
+        recent_posts.push_str(r#"</ol>"#);
+
         Self {
             data: (
                 Cow::Borrowed(&Config::read().site.url),
                 Cow::Borrowed(&Config::read().site.name),
                 Cow::Borrowed(Config::read().site.description.as_deref().unwrap_or("")),
+                Cow::Owned(page_list),
+                Cow::Owned(recent_posts),
             ),
         }
     }
@@ -26,6 +59,8 @@ impl<'d> SiteDataMap<'d> {
             SiteParameter::Url => Cow::Borrowed(&self.data.0),
             SiteParameter::Name => Cow::Borrowed(&self.data.1),
             SiteParameter::Description => Cow::Borrowed(&self.data.2),
+            SiteParameter::PageList => Cow::Borrowed(&self.data.3),
+            SiteParameter::RecentPosts => Cow::Borrowed(&self.data.4),
         }
     }
 }
@@ -67,8 +102,8 @@ impl<'d> DocumentDataMap<'d> {
                 Cow::Borrowed("Index"),
                 req.uri(),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page,
-                list_info.total_article_counts,
+                list_info.current_page_num_in_list,
+                list_info.total_num_of_articles_in_list,
             ),
         }
     }
@@ -79,8 +114,8 @@ impl<'d> DocumentDataMap<'d> {
                 Cow::Borrowed("Search"),
                 req.uri(),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page,
-                list_info.total_article_counts,
+                list_info.current_page_num_in_list,
+                list_info.total_num_of_articles_in_list,
             ),
         }
     }
@@ -91,8 +126,8 @@ impl<'d> DocumentDataMap<'d> {
                 Cow::Borrowed(author),
                 req.uri(),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page,
-                list_info.total_article_counts,
+                list_info.current_page_num_in_list,
+                list_info.total_num_of_articles_in_list,
             ),
         }
     }
@@ -113,8 +148,8 @@ impl<'d> DocumentDataMap<'d> {
                 Cow::Owned(time_range),
                 req.uri(),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
-                list_info.current_page,
-                list_info.total_article_counts,
+                list_info.current_page_num_in_list,
+                list_info.total_num_of_articles_in_list,
             ),
         }
     }
@@ -136,8 +171,8 @@ impl<'d> DocumentDataMap<'d> {
             DocumentParameter::Title => Cow::Borrowed(&self.data.0),
             DocumentParameter::Url => Cow::Owned(self.data.1.to_string()),
             DocumentParameter::PageNav => Cow::Borrowed(&self.data.2),
-            DocumentParameter::CurrentPage => Cow::Owned(self.data.3.to_string()),
-            DocumentParameter::TotalArticle => Cow::Owned(self.data.4.to_string()),
+            DocumentParameter::CurrentPageNumInList => Cow::Owned(self.data.3.to_string()),
+            DocumentParameter::TotalNumOfArticleInList => Cow::Owned(self.data.4.to_string()),
         }
     }
 
@@ -148,16 +183,16 @@ impl<'d> DocumentDataMap<'d> {
 
         let mut result = String::from(r#"<ol id="page_nav">"#);
 
-        if list_info.current_page != 1 {
+        if list_info.current_page_num_in_list != 1 {
             result.push_str(r#"<li id="prev"><a herf=""#);
             result.push_str(url_part_front);
             result.push_str(list_info.param_key());
-            result.push_str(&(list_info.current_page - 1).to_string());
+            result.push_str(&(list_info.current_page_num_in_list - 1).to_string());
             result.push_str(url_part_back);
             result.push_str(r#"">prev</a></li>"#);
         }
 
-        for page_num in 1..list_info.current_page {
+        for page_num in 1..list_info.current_page_num_in_list {
             result.push_str(r#"<li id="current"><a herf=""#);
             result.push_str(url_part_front);
             result.push_str(list_info.param_key());
@@ -171,11 +206,11 @@ impl<'d> DocumentDataMap<'d> {
         result.push_str(r#"<li id="current"><a herf=""#);
         result.push_str(&url);
         result.push_str(r#"">"#);
-        result.push_str(&(list_info.current_page).to_string());
+        result.push_str(&(list_info.current_page_num_in_list).to_string());
         result.push_str(r#"</a></li>"#);
 
-        if list_info.current_page != list_info.total_page {
-            for page_num in list_info.current_page + 1..=list_info.total_page {
+        if list_info.current_page_num_in_list != list_info.total_page {
+            for page_num in list_info.current_page_num_in_list + 1..=list_info.total_page {
                 result.push_str(r#"<li id="current"><a herf=""#);
                 result.push_str(url_part_front);
                 result.push_str(list_info.param_key());
@@ -189,7 +224,7 @@ impl<'d> DocumentDataMap<'d> {
             result.push_str(r#"<li id="next"><a herf=""#);
             result.push_str(url_part_front);
             result.push_str(list_info.param_key());
-            result.push_str(&(list_info.current_page + 1).to_string());
+            result.push_str(&(list_info.current_page_num_in_list + 1).to_string());
             result.push_str(url_part_back);
             result.push_str(r#"">next</a></li>"#);
         }

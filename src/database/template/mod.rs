@@ -29,8 +29,16 @@ impl Template {
             "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
+            "{:site.page_list}" => Ok(Part::Site(SiteParameter::PageList)),
+            "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
+            "{:document.current_page_num_in_list}" => {
+                Ok(Part::Document(DocumentParameter::CurrentPageNumInList))
+            }
+            "{:document.total_num_of_articles_in_list}" => {
+                Ok(Part::Document(DocumentParameter::TotalNumOfArticleInList))
+            }
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -39,8 +47,16 @@ impl Template {
             "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
+            "{:site.page_list}" => Ok(Part::Site(SiteParameter::PageList)),
+            "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
+            "{:document.current_page_num_in_list}" => {
+                Ok(Part::Document(DocumentParameter::CurrentPageNumInList))
+            }
+            "{:document.total_num_of_articles_in_list}" => {
+                Ok(Part::Document(DocumentParameter::TotalNumOfArticleInList))
+            }
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -49,12 +65,16 @@ impl Template {
             "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
+            "{:site.page_list}" => Ok(Part::Site(SiteParameter::PageList)),
+            "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:document.page_nav}" => Ok(Part::Document(DocumentParameter::PageNav)),
-            "{:document.current_page}" => Ok(Part::Document(DocumentParameter::CurrentPage)),
-            "{:document.total_article_counts}" => {
-                Ok(Part::Document(DocumentParameter::TotalArticle))
+            "{:document.current_page_num_in_list}" => {
+                Ok(Part::Document(DocumentParameter::CurrentPageNumInList))
+            }
+            "{:document.total_num_of_articles_in_list}" => {
+                Ok(Part::Document(DocumentParameter::TotalNumOfArticleInList))
             }
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
@@ -64,6 +84,8 @@ impl Template {
             "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
+            "{:site.page_list}" => Ok(Part::Site(SiteParameter::PageList)),
+            "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:page.title}" => Ok(Part::Page(PageParameter::Title)),
@@ -77,6 +99,8 @@ impl Template {
             "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
+            "{:site.page_list}" => Ok(Part::Site(SiteParameter::PageList)),
+            "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:post.title}" => Ok(Part::Post(PostParameter::Title)),
@@ -90,6 +114,8 @@ impl Template {
             "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
+            "{:site.page_list}" => Ok(Part::Site(SiteParameter::PageList)),
+            "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
@@ -103,6 +129,8 @@ impl Template {
             "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
             "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
+            "{:site.page_list}" => Ok(Part::Site(SiteParameter::PageList)),
+            "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),

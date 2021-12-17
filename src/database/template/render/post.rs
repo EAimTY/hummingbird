@@ -2,12 +2,12 @@ use super::{
     data_map::{DocumentDataMap, PostDataMap, SiteDataMap},
     Template,
 };
-use crate::database::Post;
+use crate::database::{Database, Post};
 use hyper::{Body, Request, Response};
 
 impl Template {
-    pub fn render_post(&self, req: &Request<Body>, post: &Post) -> Response<Body> {
-        let site_data = SiteDataMap::from_config_and_db();
+    pub fn render_post(&self, db: &Database, req: &Request<Body>, post: &Post) -> Response<Body> {
+        let site_data = SiteDataMap::from_config_and_db(db);
         let document_data = DocumentDataMap::from_post(req, post);
 
         let post_data = PostDataMap::from_post(post);
