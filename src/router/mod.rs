@@ -1,6 +1,7 @@
-use crate::Config;
+use crate::{Config, DatabaseManager};
 use anyhow::{anyhow, Result};
 use hyper::{Body, Request, Response, Uri};
+use hyper_staticfile::ResponseBuilder as StaticFileResponseBuilder;
 use matchit::{InsertError, Node};
 use once_cell::sync::OnceCell;
 use std::{collections::HashMap, convert::Infallible};
@@ -62,6 +63,10 @@ impl RouteTable {
             }
         }
 
+        if let Some(res) = Self::serve_static(&req).await {
+            return Ok(res);
+        }
+
         if path == Config::read().url_patterns.update {
             if let Some(res) = update::handle(&mut req).await {
                 return Ok(res);
@@ -84,6 +89,37 @@ impl RouteTable {
     pub async fn update_posts(posts: HashMap<String, usize>) {
         let route_table = ROUTE_TABLE.get().unwrap();
         route_table.map.update_posts(posts).await;
+    }
+
+    async fn serve_static(req: &Request<Body>) -> Option<Response<Body>> {
+        let path = req.uri().path();
+
+        if path.starts_with("/pages/")
+            || path.starts_with("/posts/")
+            || path == "/template/header.html"
+            || path == "/template/footer.html"
+            || path == "/template/page_nav.html"
+            || path == "/template/page.html"
+            || path == "/template/post.html"
+            || path == "/template/summary.html"
+            || path == "/template/not_found.html"
+        {
+            return None;
+        }
+
+        let db = DatabaseManager::read().await;
+        let root = db.repo.tempdir.path();
+
+        if let Ok(result) = hyper_staticfile::resolve(root, req).await {
+            let res = StaticFileResponseBuilder::new()
+                .request(req)
+                .build(result)
+                .unwrap();
+
+            return Some(res);
+        }
+
+        None
     }
 }
 
