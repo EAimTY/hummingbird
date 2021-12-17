@@ -1,6 +1,8 @@
 #[derive(Clone, Debug)]
 pub enum SiteParameter {
+    Url,
     Name,
+    Description,
 }
 
 #[derive(Clone, Debug)]

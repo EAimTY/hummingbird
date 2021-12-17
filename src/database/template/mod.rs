@@ -25,24 +25,30 @@ impl Template {
         let param_pattern = Regex::new(r"\{:[a-z._]+\}").unwrap();
 
         let header = fs::read_to_string(path.join("header.html")).await?;
-        let header = Self::parse_string(&header, &param_pattern, &|str| match str {
+        let header = Self::parse_string(&header, &param_pattern, |str| match str {
+            "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
         let footer = fs::read_to_string(path.join("footer.html")).await?;
-        let footer = Self::parse_string(&footer, &param_pattern, &|str| match str {
+        let footer = Self::parse_string(&footer, &param_pattern, |str| match str {
+            "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
         let page_nav = fs::read_to_string(path.join("page_nav.html")).await?;
-        let page_nav = Self::parse_string(&page_nav, &param_pattern, &|str| match str {
+        let page_nav = Self::parse_string(&page_nav, &param_pattern, |str| match str {
+            "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:document.page_nav}" => Ok(Part::Document(DocumentParameter::PageNav)),
@@ -54,8 +60,10 @@ impl Template {
         })?;
 
         let page = fs::read_to_string(path.join("page.html")).await?;
-        let page = Self::parse_string(&page, &param_pattern, &|str| match str {
+        let page = Self::parse_string(&page, &param_pattern, |str| match str {
+            "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:page.title}" => Ok(Part::Page(PageParameter::Title)),
@@ -65,8 +73,10 @@ impl Template {
         })?;
 
         let post = fs::read_to_string(path.join("post.html")).await?;
-        let post = Self::parse_string(&post, &param_pattern, &|str| match str {
+        let post = Self::parse_string(&post, &param_pattern, |str| match str {
+            "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:post.title}" => Ok(Part::Post(PostParameter::Title)),
@@ -76,8 +86,10 @@ impl Template {
         })?;
 
         let summary = fs::read_to_string(path.join("summary.html")).await?;
-        let summary = Self::parse_string(&summary, &param_pattern, &|str| match str {
+        let summary = Self::parse_string(&summary, &param_pattern, |str| match str {
+            "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
@@ -87,8 +99,10 @@ impl Template {
         })?;
 
         let not_found = fs::read_to_string(path.join("not_found.html")).await?;
-        let not_found = Self::parse_string(&not_found, &param_pattern, &|str| match str {
+        let not_found = Self::parse_string(&not_found, &param_pattern, |str| match str {
+            "{:site.url}" => Ok(Part::Site(SiteParameter::Url)),
             "{:site.name}" => Ok(Part::Site(SiteParameter::Name)),
+            "{:site.description}" => Ok(Part::Site(SiteParameter::Description)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
@@ -105,7 +119,7 @@ impl Template {
         })
     }
 
-    fn parse_string<M>(str: &str, param_pattern: &Regex, param_matcher: &M) -> Result<Vec<Part>>
+    fn parse_string<M>(str: &str, param_pattern: &Regex, param_matcher: M) -> Result<Vec<Part>>
     where
         M: Fn(&str) -> Result<Part>,
     {

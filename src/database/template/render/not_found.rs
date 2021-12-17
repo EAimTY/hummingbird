@@ -6,7 +6,7 @@ use hyper::{Body, Request, Response};
 
 impl Template {
     pub fn render_not_found(&self, req: &Request<Body>) -> Response<Body> {
-        let site_data = SiteDataMap::from_config();
+        let site_data = SiteDataMap::from_config_and_db();
         let document_data = DocumentDataMap::from_not_found(req);
 
         let header = self.header(&site_data, &document_data);
