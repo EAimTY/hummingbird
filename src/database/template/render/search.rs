@@ -10,12 +10,12 @@ impl Template {
         &self,
         db: &Database,
         req: &Request<Body>,
-        _filters: Vec<PostFilter>,
+        filters: Vec<PostFilter>,
         posts: Vec<&Post>,
         list_info: ListInfo,
     ) -> Response<Body> {
         let site_data = SiteDataMap::from_config_and_db(db);
-        let document_data = DocumentDataMap::from_search(req, list_info);
+        let document_data = DocumentDataMap::from_search(req, filters, list_info);
 
         let header = self.header(&site_data, &document_data);
         let posts = posts

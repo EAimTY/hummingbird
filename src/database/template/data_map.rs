@@ -1,6 +1,6 @@
 use super::{markdown, parameter::*};
 use crate::{
-    database::{Database, ListInfo, Page, Post, TimeRange},
+    database::{Database, ListInfo, Page, Post, PostFilter, TimeRange},
     Config,
 };
 use hyper::{Body, Request, Uri};
@@ -66,7 +66,14 @@ impl<'d> SiteDataMap<'d> {
 }
 
 pub struct DocumentDataMap<'d> {
-    data: (Cow<'d, str>, &'d Uri, Cow<'d, str>, usize, usize),
+    data: (
+        Cow<'d, str>,
+        &'d Uri,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        usize,
+        usize,
+    ),
 }
 
 impl<'d> DocumentDataMap<'d> {
@@ -77,6 +84,7 @@ impl<'d> DocumentDataMap<'d> {
             data: (
                 Cow::Borrowed(&page.title),
                 req.uri(),
+                Cow::Owned(format!("<span>Page: {}</span>", page.title)),
                 Cow::Borrowed(Self::EMPTY_PAGE_NAV),
                 0,
                 0,
@@ -89,6 +97,7 @@ impl<'d> DocumentDataMap<'d> {
             data: (
                 Cow::Borrowed(&post.title),
                 req.uri(),
+                Cow::Owned(format!("<span>Post: {}</span>", post.title)),
                 Cow::Borrowed(Self::EMPTY_PAGE_NAV),
                 0,
                 0,
@@ -99,8 +108,9 @@ impl<'d> DocumentDataMap<'d> {
     pub fn from_index(req: &'d Request<Body>, list_info: ListInfo) -> Self {
         Self {
             data: (
-                Cow::Borrowed("Index"),
+                Cow::Borrowed(""),
                 req.uri(),
+                Cow::Borrowed("<span></span>"),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
                 list_info.current_page_num_in_list,
                 list_info.total_num_of_articles_in_list,
@@ -108,11 +118,26 @@ impl<'d> DocumentDataMap<'d> {
         }
     }
 
-    pub fn from_search(req: &'d Request<Body>, list_info: ListInfo) -> Self {
+    pub fn from_search(
+        req: &'d Request<Body>,
+        filters: Vec<PostFilter>,
+        list_info: ListInfo,
+    ) -> Self {
+        let mut breadcrumb = String::new();
+        filters.iter().for_each(|filter| {
+            breadcrumb.push_str(r#"<span>"#);
+            let (breadcrumb_type, breadcrumb_value) = filter.to_breadcrumb();
+            breadcrumb.push_str(breadcrumb_type);
+            breadcrumb.push_str(r#": "#);
+            breadcrumb.push_str(&breadcrumb_value);
+            breadcrumb.push_str(r#"</span>"#);
+        });
+
         Self {
             data: (
                 Cow::Borrowed("Search"),
                 req.uri(),
+                Cow::Owned(breadcrumb),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
                 list_info.current_page_num_in_list,
                 list_info.total_num_of_articles_in_list,
@@ -123,8 +148,9 @@ impl<'d> DocumentDataMap<'d> {
     pub fn from_author(req: &'d Request<Body>, author: &'d str, list_info: ListInfo) -> Self {
         Self {
             data: (
-                Cow::Borrowed(author),
+                Cow::Owned(format!("Author: {}", author)),
                 req.uri(),
+                Cow::Owned(format!("<span>Author: {}</span>", author)),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
                 list_info.current_page_num_in_list,
                 list_info.total_num_of_articles_in_list,
@@ -137,16 +163,13 @@ impl<'d> DocumentDataMap<'d> {
         time_range: &'d TimeRange,
         list_info: ListInfo,
     ) -> Self {
-        let time_range = match time_range {
-            TimeRange::Year { year, .. } => year.to_string(),
-            TimeRange::Month { year, month, .. } => format!("{}-{}", year, month),
-            TimeRange::Free { .. } => unreachable!(),
-        };
+        let breadcrumb = format!("<span>{}</span>", time_range);
 
         Self {
             data: (
-                Cow::Owned(time_range),
+                Cow::Owned(time_range.to_string()),
                 req.uri(),
+                Cow::Owned(breadcrumb),
                 Cow::Owned(Self::gen_page_nav(req.uri(), &list_info)),
                 list_info.current_page_num_in_list,
                 list_info.total_num_of_articles_in_list,
@@ -159,6 +182,7 @@ impl<'d> DocumentDataMap<'d> {
             data: (
                 Cow::Borrowed("Not Found"),
                 req.uri(),
+                Cow::Borrowed("<span>Not Found</span>"),
                 Cow::Borrowed(Self::EMPTY_PAGE_NAV),
                 0,
                 0,
@@ -170,9 +194,10 @@ impl<'d> DocumentDataMap<'d> {
         match param {
             DocumentParameter::Title => Cow::Borrowed(&self.data.0),
             DocumentParameter::Url => Cow::Owned(self.data.1.to_string()),
-            DocumentParameter::PageNav => Cow::Borrowed(&self.data.2),
-            DocumentParameter::CurrentPageNumInList => Cow::Owned(self.data.3.to_string()),
-            DocumentParameter::TotalNumOfArticleInList => Cow::Owned(self.data.4.to_string()),
+            DocumentParameter::Breadcrumb => Cow::Borrowed(&self.data.2),
+            DocumentParameter::PageNav => Cow::Borrowed(&self.data.3),
+            DocumentParameter::CurrentPageNumInList => Cow::Owned(self.data.4.to_string()),
+            DocumentParameter::TotalNumOfArticleInList => Cow::Owned(self.data.5.to_string()),
         }
     }
 
