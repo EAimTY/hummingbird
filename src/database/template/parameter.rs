@@ -22,6 +22,9 @@ pub enum PageParameter {
     Title,
     Url,
     Content,
+    Author,
+    CreateTime,
+    ModifyTime,
 }
 
 #[derive(Clone, Debug)]
@@ -29,11 +32,17 @@ pub enum PostParameter {
     Title,
     Url,
     Content,
+    Author,
+    CreateTime,
+    ModifyTime,
 }
 
 #[derive(Clone, Debug)]
 pub enum SummaryParameter {
     Title,
     Url,
-    Content,
+    Summary,
+    Author,
+    CreateTime,
+    ModifyTime,
 }

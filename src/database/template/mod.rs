@@ -95,6 +95,9 @@ impl Template {
             "{:page.title}" => Ok(Part::Page(PageParameter::Title)),
             "{:page.link}" => Ok(Part::Page(PageParameter::Url)),
             "{:page.content}" => Ok(Part::Page(PageParameter::Content)),
+            "{:page.author}" => Ok(Part::Page(PageParameter::Author)),
+            "{:page.create_time}" => Ok(Part::Page(PageParameter::CreateTime)),
+            "{:page.modify_time}" => Ok(Part::Page(PageParameter::ModifyTime)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -111,6 +114,9 @@ impl Template {
             "{:post.title}" => Ok(Part::Post(PostParameter::Title)),
             "{:post.link}" => Ok(Part::Post(PostParameter::Url)),
             "{:post.content}" => Ok(Part::Post(PostParameter::Content)),
+            "{:post.author}" => Ok(Part::Post(PostParameter::Author)),
+            "{:post.create_time}" => Ok(Part::Post(PostParameter::CreateTime)),
+            "{:post.modify_time}" => Ok(Part::Post(PostParameter::ModifyTime)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
@@ -126,7 +132,10 @@ impl Template {
             "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
             "{:summary.link}" => Ok(Part::Summary(SummaryParameter::Url)),
-            "{:summary.content}" => Ok(Part::Summary(SummaryParameter::Content)),
+            "{:summary.content}" => Ok(Part::Summary(SummaryParameter::Summary)),
+            "{:summary.author}" => Ok(Part::Summary(SummaryParameter::Author)),
+            "{:summary.create_time}" => Ok(Part::Summary(SummaryParameter::CreateTime)),
+            "{:summary.modify_time}" => Ok(Part::Summary(SummaryParameter::ModifyTime)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
