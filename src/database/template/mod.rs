@@ -33,7 +33,7 @@ impl Template {
             "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
-            "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
+            "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:document.current_page_num_in_list}" => {
                 Ok(Part::Document(DocumentParameter::CurrentPageNumInList))
             }
@@ -52,7 +52,7 @@ impl Template {
             "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
-            "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
+            "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:document.current_page_num_in_list}" => {
                 Ok(Part::Document(DocumentParameter::CurrentPageNumInList))
             }
@@ -71,7 +71,7 @@ impl Template {
             "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
-            "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
+            "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:document.page_nav}" => Ok(Part::Document(DocumentParameter::PageNav)),
             "{:document.current_page_num_in_list}" => {
                 Ok(Part::Document(DocumentParameter::CurrentPageNumInList))
@@ -91,7 +91,7 @@ impl Template {
             "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
-            "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
+            "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:page.title}" => Ok(Part::Page(PageParameter::Title)),
             "{:page.link}" => Ok(Part::Page(PageParameter::Url)),
             "{:page.content}" => Ok(Part::Page(PageParameter::Content)),
@@ -110,7 +110,7 @@ impl Template {
             "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
-            "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
+            "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:post.title}" => Ok(Part::Post(PostParameter::Title)),
             "{:post.link}" => Ok(Part::Post(PostParameter::Url)),
             "{:post.content}" => Ok(Part::Post(PostParameter::Content)),
@@ -129,7 +129,7 @@ impl Template {
             "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
-            "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
+            "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
             "{:summary.link}" => Ok(Part::Summary(SummaryParameter::Url)),
             "{:summary.content}" => Ok(Part::Summary(SummaryParameter::Summary)),
@@ -148,7 +148,7 @@ impl Template {
             "{:site.recent_posts}" => Ok(Part::Site(SiteParameter::RecentPosts)),
             "{:document.title}" => Ok(Part::Document(DocumentParameter::Title)),
             "{:document.url}" => Ok(Part::Document(DocumentParameter::Url)),
-            "{:document.breadcrumb}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
+            "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             _ => Err(anyhow!("Unknown parameter: {}", str)),
         })?;
 
