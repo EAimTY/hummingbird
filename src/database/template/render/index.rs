@@ -12,7 +12,7 @@ impl Template {
         posts: Vec<&Post>,
         list_info: ListInfo,
     ) -> Response<Body> {
-        let site_data = SiteDataMap::from_config();
+        let site_data = SiteDataMap::from_config_and_db();
         let document_data = DocumentDataMap::from_index(req, list_info);
 
         let header = self.header(&site_data, &document_data);

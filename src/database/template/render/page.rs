@@ -7,7 +7,7 @@ use hyper::{Body, Request, Response};
 
 impl Template {
     pub fn render_page(&self, req: &Request<Body>, page: &Page) -> Response<Body> {
-        let site_data = SiteDataMap::from_config();
+        let site_data = SiteDataMap::from_config_and_db();
         let document_data = DocumentDataMap::from_page(req, page);
 
         let page_data = PageDataMap::from_page(page);

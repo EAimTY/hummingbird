@@ -7,19 +7,25 @@ use hyper::{Body, Request, Uri};
 use std::borrow::Cow;
 
 pub struct SiteDataMap<'d> {
-    data: (Cow<'d, str>,),
+    data: (Cow<'d, str>, Cow<'d, str>, Cow<'d, str>),
 }
 
 impl<'d> SiteDataMap<'d> {
-    pub fn from_config() -> Self {
+    pub fn from_config_and_db() -> Self {
         Self {
-            data: (Cow::Borrowed(&Config::read().site.name),),
+            data: (
+                Cow::Borrowed(&Config::read().site.url),
+                Cow::Borrowed(&Config::read().site.name),
+                Cow::Borrowed(Config::read().site.description.as_deref().unwrap_or("")),
+            ),
         }
     }
 
     pub fn get(&'d self, param: &SiteParameter) -> Cow<'d, str> {
         match param {
-            SiteParameter::Name => Cow::Borrowed(&self.data.0),
+            SiteParameter::Url => Cow::Borrowed(&self.data.0),
+            SiteParameter::Name => Cow::Borrowed(&self.data.1),
+            SiteParameter::Description => Cow::Borrowed(&self.data.2),
         }
     }
 }
@@ -248,11 +254,17 @@ pub struct SummaryDataMap<'d> {
 
 impl<'d> SummaryDataMap<'d> {
     pub fn from_post(post: &'d Post) -> Self {
+        let more_indicator_idx = post
+            .content
+            .find("<!--more-->")
+            .unwrap_or(post.content.len());
+        let post_summary = &post.content[..more_indicator_idx].trim_end();
+
         Self {
             data: (
                 Cow::Borrowed(&post.title),
                 Cow::Borrowed(&post.url),
-                Cow::Owned(markdown::md_to_html(&post.content)),
+                Cow::Owned(markdown::md_to_html(post_summary)),
             ),
         }
     }
