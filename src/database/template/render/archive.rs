@@ -2,18 +2,19 @@ use super::{
     data_map::{DocumentDataMap, SiteDataMap, SummaryDataMap},
     Template,
 };
-use crate::database::{ListInfo, Post, TimeRange};
+use crate::database::{Database, ListInfo, Post, TimeRange};
 use hyper::{Body, Request, Response};
 
 impl Template {
     pub fn render_archive(
         &self,
+        db: &Database,
         req: &Request<Body>,
         time_range: TimeRange,
         posts: Vec<&Post>,
         list_info: ListInfo,
     ) -> Response<Body> {
-        let site_data = SiteDataMap::from_config_and_db();
+        let site_data = SiteDataMap::from_config_and_db(db);
         let document_data = DocumentDataMap::from_time_range(req, &time_range, list_info);
 
         let header = self.header(&site_data, &document_data);

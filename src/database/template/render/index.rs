@@ -2,17 +2,18 @@ use super::{
     data_map::{DocumentDataMap, SiteDataMap, SummaryDataMap},
     Template,
 };
-use crate::database::{ListInfo, Post};
+use crate::database::{Database, ListInfo, Post};
 use hyper::{Body, Request, Response};
 
 impl Template {
     pub fn render_index(
         &self,
+        db: &Database,
         req: &Request<Body>,
         posts: Vec<&Post>,
         list_info: ListInfo,
     ) -> Response<Body> {
-        let site_data = SiteDataMap::from_config_and_db();
+        let site_data = SiteDataMap::from_config_and_db(db);
         let document_data = DocumentDataMap::from_index(req, list_info);
 
         let header = self.header(&site_data, &document_data);

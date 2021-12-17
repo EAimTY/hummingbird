@@ -2,18 +2,19 @@ use super::{
     data_map::{DocumentDataMap, SiteDataMap, SummaryDataMap},
     Template,
 };
-use crate::database::{ListInfo, Post, PostFilter};
+use crate::database::{Database, ListInfo, Post, PostFilter};
 use hyper::{Body, Request, Response};
 
 impl Template {
     pub fn render_search(
         &self,
+        db: &Database,
         req: &Request<Body>,
         _filters: Vec<PostFilter>,
         posts: Vec<&Post>,
         list_info: ListInfo,
     ) -> Response<Body> {
-        let site_data = SiteDataMap::from_config_and_db();
+        let site_data = SiteDataMap::from_config_and_db(db);
         let document_data = DocumentDataMap::from_search(req, list_info);
 
         let header = self.header(&site_data, &document_data);

@@ -63,14 +63,21 @@ impl Posts {
         &self.data[id]
     }
 
-    pub fn get_multi(&self, id: &[usize], current_page: usize) -> Option<(Vec<&Post>, usize)> {
-        Self::page_filter(id.iter().map(|id| &self.data[*id]), current_page)
+    pub fn get_multi(
+        &self,
+        id: &[usize],
+        current_page_num_in_list: usize,
+    ) -> Option<(Vec<&Post>, usize)> {
+        Self::page_filter(
+            id.iter().map(|id| &self.data[*id]),
+            current_page_num_in_list,
+        )
     }
 
     pub fn get_time_range(
         &self,
         time_range: &TimeRange,
-        current_page: usize,
+        current_page_num_in_list: usize,
     ) -> Option<(Vec<&Post>, usize)> {
         let from = self
             .data
@@ -80,17 +87,17 @@ impl Posts {
             .data
             .partition_point(|post| &post.create_time <= time_range.to());
 
-        Self::page_filter(self.data[from..to].iter(), current_page)
+        Self::page_filter(self.data[from..to].iter(), current_page_num_in_list)
     }
 
-    pub fn get_index(&self, current_page: usize) -> Option<(Vec<&Post>, usize)> {
-        Self::page_filter(self.data.iter(), current_page)
+    pub fn get_index(&self, current_page_num_in_list: usize) -> Option<(Vec<&Post>, usize)> {
+        Self::page_filter(self.data.iter(), current_page_num_in_list)
     }
 
     pub fn search(
         &self,
         filters: &[PostFilter],
-        current_page: usize,
+        current_page_num_in_list: usize,
     ) -> Option<(Vec<&Post>, usize)> {
         let mut posts: Box<dyn DoubleEndedIterator<Item = &Post>> = Box::new(self.data.iter());
 
@@ -119,19 +126,19 @@ impl Posts {
             }
         }
 
-        Self::page_filter(posts, current_page)
+        Self::page_filter(posts, current_page_num_in_list)
     }
 
     fn page_filter<'p>(
         posts: impl DoubleEndedIterator<Item = &'p Post>,
-        current_page: usize,
+        current_page_num_in_list: usize,
     ) -> Option<(Vec<&'p Post>, usize)> {
         let mut result = Vec::with_capacity(Config::read().site.list_posts_count);
         let mut total = 0;
 
         if Config::read().site.list_from_old_to_new {
             let mut posts_iter =
-                posts.skip((current_page - 1) * Config::read().site.list_posts_count);
+                posts.skip((current_page_num_in_list - 1) * Config::read().site.list_posts_count);
 
             for post in posts_iter.by_ref() {
                 result.push(post);
@@ -142,11 +149,12 @@ impl Posts {
                 }
             }
 
-            total += (current_page - 1) * Config::read().site.list_posts_count + posts_iter.count();
+            total += (current_page_num_in_list - 1) * Config::read().site.list_posts_count
+                + posts_iter.count();
         } else {
             let mut posts_iter = posts
                 .rev()
-                .skip((current_page - 1) * Config::read().site.list_posts_count);
+                .skip((current_page_num_in_list - 1) * Config::read().site.list_posts_count);
 
             for post in posts_iter.by_ref() {
                 result.push(post);
@@ -157,7 +165,8 @@ impl Posts {
                 }
             }
 
-            total += (current_page - 1) * Config::read().site.list_posts_count + posts_iter.count();
+            total += (current_page_num_in_list - 1) * Config::read().site.list_posts_count
+                + posts_iter.count();
         }
 
         if !result.is_empty() {

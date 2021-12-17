@@ -3,6 +3,8 @@ pub enum SiteParameter {
     Url,
     Name,
     Description,
+    PageList,
+    RecentPosts,
 }
 
 #[derive(Clone, Debug)]
@@ -10,8 +12,8 @@ pub enum DocumentParameter {
     Title,
     Url,
     PageNav,
-    CurrentPage,
-    TotalArticle,
+    CurrentPageNumInList,
+    TotalNumOfArticleInList,
 }
 
 #[derive(Clone, Debug)]
