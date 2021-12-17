@@ -10,6 +10,7 @@ chrono-tz = { version = "0.6", features = ["serde"] }
 getopts = "0.2"
 git2 = { version = "0.13", features = ["https"], default-features = false }
 hyper = { version = "0.14", features = ["http1", "http2", "server", "runtime"] }
+hyper-staticfile = "0.8"
 matchit = "0.4"
 once_cell = "1.8"
 pulldown-cmark = { version = "0.8", default-features = false }
