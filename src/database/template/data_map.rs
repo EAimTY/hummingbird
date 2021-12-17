@@ -3,6 +3,8 @@ use crate::{
     database::{Database, ListInfo, Page, Post, PostFilter, TimeRange},
     Config,
 };
+use chrono::DateTime;
+use chrono_tz::Tz;
 use hyper::{Body, Request, Uri};
 use std::borrow::Cow;
 
@@ -261,7 +263,14 @@ impl<'d> DocumentDataMap<'d> {
 }
 
 pub struct PageDataMap<'d> {
-    data: (Cow<'d, str>, Cow<'d, str>, Cow<'d, str>),
+    data: (
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        &'d DateTime<Tz>,
+        &'d DateTime<Tz>,
+    ),
 }
 
 impl<'d> PageDataMap<'d> {
@@ -271,6 +280,9 @@ impl<'d> PageDataMap<'d> {
                 Cow::Borrowed(&page.title),
                 Cow::Borrowed(&page.url),
                 Cow::Owned(markdown::md_to_html(&page.content)),
+                Cow::Borrowed(page.author.as_deref().unwrap_or("Anonymous")),
+                &page.create_time,
+                &page.modify_time,
             ),
         }
     }
@@ -280,12 +292,22 @@ impl<'d> PageDataMap<'d> {
             PageParameter::Title => Cow::Borrowed(&self.data.0),
             PageParameter::Url => Cow::Borrowed(&self.data.1),
             PageParameter::Content => Cow::Borrowed(&self.data.2),
+            PageParameter::Author => Cow::Borrowed(&self.data.3),
+            PageParameter::CreateTime => Cow::Owned(self.data.4.to_string()),
+            PageParameter::ModifyTime => Cow::Owned(self.data.5.to_string()),
         }
     }
 }
 
 pub struct PostDataMap<'d> {
-    data: (Cow<'d, str>, Cow<'d, str>, Cow<'d, str>),
+    data: (
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        &'d DateTime<Tz>,
+        &'d DateTime<Tz>,
+    ),
 }
 
 impl<'d> PostDataMap<'d> {
@@ -295,6 +317,9 @@ impl<'d> PostDataMap<'d> {
                 Cow::Borrowed(&post.title),
                 Cow::Borrowed(&post.url),
                 Cow::Owned(markdown::md_to_html(&post.content)),
+                Cow::Borrowed(post.author.as_deref().unwrap_or("Anonymous")),
+                &post.create_time,
+                &post.modify_time,
             ),
         }
     }
@@ -304,12 +329,22 @@ impl<'d> PostDataMap<'d> {
             PostParameter::Title => Cow::Borrowed(&self.data.0),
             PostParameter::Url => Cow::Borrowed(&self.data.1),
             PostParameter::Content => Cow::Borrowed(&self.data.2),
+            PostParameter::Author => Cow::Borrowed(&self.data.3),
+            PostParameter::CreateTime => Cow::Owned(self.data.4.to_string()),
+            PostParameter::ModifyTime => Cow::Owned(self.data.5.to_string()),
         }
     }
 }
 
 pub struct SummaryDataMap<'d> {
-    data: (Cow<'d, str>, Cow<'d, str>, Cow<'d, str>),
+    data: (
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        Cow<'d, str>,
+        &'d DateTime<Tz>,
+        &'d DateTime<Tz>,
+    ),
 }
 
 impl<'d> SummaryDataMap<'d> {
@@ -325,6 +360,9 @@ impl<'d> SummaryDataMap<'d> {
                 Cow::Borrowed(&post.title),
                 Cow::Borrowed(&post.url),
                 Cow::Owned(markdown::md_to_html(post_summary)),
+                Cow::Borrowed(post.author.as_deref().unwrap_or("Anonymous")),
+                &post.create_time,
+                &post.modify_time,
             ),
         }
     }
@@ -333,7 +371,10 @@ impl<'d> SummaryDataMap<'d> {
         match param {
             SummaryParameter::Title => Cow::Borrowed(&self.data.0),
             SummaryParameter::Url => Cow::Borrowed(&self.data.1),
-            SummaryParameter::Content => Cow::Borrowed(&self.data.2),
+            SummaryParameter::Summary => Cow::Borrowed(&self.data.2),
+            SummaryParameter::Author => Cow::Borrowed(&self.data.3),
+            SummaryParameter::CreateTime => Cow::Owned(self.data.4.to_string()),
+            SummaryParameter::ModifyTime => Cow::Owned(self.data.5.to_string()),
         }
     }
 }
