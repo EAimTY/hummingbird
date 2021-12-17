@@ -4,6 +4,7 @@ use anyhow::{anyhow, Error, Result};
 use chrono::{DateTime, TimeZone};
 use chrono_tz::Tz;
 use once_cell::sync::OnceCell;
+use std::fmt::{self, Display, Formatter};
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub use self::{
@@ -182,6 +183,16 @@ impl TimeRange {
             Self::Year { to, .. } => to,
             Self::Month { to, .. } => to,
             Self::Free { to, .. } => to,
+        }
+    }
+}
+
+impl Display for TimeRange {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Year { year, .. } => write!(f, "Year: {}", year),
+            Self::Month { year, month, .. } => write!(f, "Year: {} Month: {:02}", year, month),
+            Self::Free { from, to } => write!(f, "From {} To {}", from, to),
         }
     }
 }

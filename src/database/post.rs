@@ -5,6 +5,7 @@ use chrono::{DateTime, Datelike, TimeZone};
 use chrono_tz::Tz;
 use regex::{Captures, Regex};
 use std::{
+    borrow::Cow,
     cmp::Ordering,
     collections::{BinaryHeap, HashMap},
     ffi::OsStr,
@@ -272,6 +273,14 @@ impl<'f> PostFilter<'f> {
             Some(filters)
         } else {
             None
+        }
+    }
+
+    pub fn to_breadcrumb(&self) -> (&str, Cow<str>) {
+        match self {
+            Self::Keyword(keyword) => ("Keyword", Cow::Borrowed(keyword)),
+            Self::TimeRange(time_range) => ("Time Range", Cow::Owned(time_range.to_string())),
+            Self::Author(author) => ("Author", Cow::Borrowed(author)),
         }
     }
 }

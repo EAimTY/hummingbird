@@ -11,6 +11,7 @@ pub enum SiteParameter {
 pub enum DocumentParameter {
     Title,
     Url,
+    Breadcrumb,
     PageNav,
     CurrentPageNumInList,
     TotalNumOfArticleInList,
