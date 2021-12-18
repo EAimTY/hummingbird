@@ -1,7 +1,13 @@
 [package]
-name = "no_name_yet"
+name = "hummingbird"
 version = "0.1.0"
 edition = "2021"
+description = "A lightweight and blazing fast content management system using git repo as the database"
+keywords = ["cms", "blog", "http", "git", "markdown"]
+authors = ["EAimTY <ea.imty@gmail.com>"]
+readme = "README.md"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/EAimTY/hummingbird"
 
 [dependencies]
 anyhow = "1.0"
@@ -17,7 +23,7 @@ pulldown-cmark = { version = "0.8", default-features = false }
 regex = "1.5"
 serde = { version = "1.0", features = ["derive"] }
 tempfile = "3.2"
-tokio = { version = "1.14", features = ["macros", "rt-multi-thread", "sync", "fs"] }
+tokio = { version = "1.15", features = ["macros", "rt-multi-thread", "sync", "fs"] }
 toml = "0.5"
 
 [profile.release]
