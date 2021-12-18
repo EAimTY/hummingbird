@@ -6,7 +6,7 @@ A lightweight and blazing fast content management system using git repo as the d
 
 hummingbird is a content management system uses a git repository as a database. It reads your posts and pages stored in the git repository in markdown format, apply HTML templates on them, then serve them.
 
-Hummingbird adheres **Less is better**. It has no complicated features or an omnipotent template system. What it can do is to present your content to everyone at the fastest speed dutifully.
+hummingbird adheres **Less is better**. It has no complicated features or an omnipotent template system. What it can do is to present your content to everyone at the fastest speed dutifully.
 
 hummingbird is written in Rust and built directly on top of [hyper](https://github.com/hyperium/hyper), which means fast and safe.
 
@@ -18,7 +18,7 @@ hummingbird is written in Rust and built directly on top of [hyper](https://gith
 - Compares to setting up a traditional CMS, setting up hummingbird is extremely easy. No need to configure the runtime environment or DBMS. A configuration file and a git repository as database, those are what running hummingbird needs
 - hummingbird's database is read-only - hummingbird fetches your repo when you call it. This makes hummingbird much safer than a traditional CMS
 - hummingbird has much less features than a traditional CMS. You should only use hummingbird when you don't need a lot of features.
-- Hummingbird cannot handle frequent repo updates, such as once every minute. You should only use hummingbird when you are updating your content once every hour or less
+- hummingbird cannot handle frequent repo updates, such as once every minute. You should only use hummingbird when you are updating your content once every hour or less
 
 ### hummingbird vs GitHub Pages
 - hummingbird is not a static HTML file serve-r. You can search keywords in your posts, even adding author and create-time filters on searches.
@@ -159,6 +159,15 @@ You need Rust 1.56 or above to compile hummingbird.
 $ git clone https://github.com/EAimTY/hummingbird && cd hummingbird
 $ cargo build --release
 ```
+
+## Further development plan
+
+- Full evaluate-on-write template-applying
+- Rewrite the route table structure
+- Longpoll database updating
+- More template APIs
+- More search filters
+- ...
 
 ## License
 
