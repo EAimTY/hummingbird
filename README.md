@@ -162,6 +162,8 @@ $ cargo build --release
 
 ## Further development plan
 
+- Built-in TLS support
+- Multiple income socket support
 - Full evaluate-on-write template-applying
 - Rewrite the route table structure
 - Longpoll database updating
