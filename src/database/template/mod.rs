@@ -132,7 +132,7 @@ impl Template {
             "{:document.breadcrumbs}" => Ok(Part::Document(DocumentParameter::Breadcrumb)),
             "{:summary.title}" => Ok(Part::Summary(SummaryParameter::Title)),
             "{:summary.link}" => Ok(Part::Summary(SummaryParameter::Url)),
-            "{:summary.content}" => Ok(Part::Summary(SummaryParameter::Summary)),
+            "{:summary.summary}" => Ok(Part::Summary(SummaryParameter::Summary)),
             "{:summary.author}" => Ok(Part::Summary(SummaryParameter::Author)),
             "{:summary.create_time}" => Ok(Part::Summary(SummaryParameter::CreateTime)),
             "{:summary.modify_time}" => Ok(Part::Summary(SummaryParameter::ModifyTime)),
