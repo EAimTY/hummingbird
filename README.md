@@ -4,7 +4,7 @@ A lightweight and blazing fast content management system using git repo as the d
 
 ## What exactly is hummingbird
 
-hummingbird is a content management system uses a git repository as a database. It reads your posts and pages stored in the git repository in markdown format, apply HTML templates on them, then serve them.
+hummingbird is a content management system uses a git repository as a database. It reads your posts and pages stored in the git repository in markdown format, applys HTML templates on them, then serves them.
 
 hummingbird adheres **Less is better**. It has no complicated features or an omnipotent template system. What it can do is to present your content to everyone at the fastest speed dutifully.
 
@@ -69,7 +69,7 @@ When getting a request, hummingbird will put them together in an order of:
 You can use these patameters below in your template:
 
 
-Can be used in every template file:
+*Can be used in every template file:*
 
 `{:site.url}` - Site URL set in config
 
@@ -88,7 +88,7 @@ Can be used in every template file:
 `{:document.breadcrumbs}` - The breadcrumbs, indicating current visiting location
 
 
-Can be used in `/template/page_nav.html`:
+*Can be used in `/template/page_nav.html`:*
 
 `{:document.page_nav}` - The page navigator
 
@@ -97,7 +97,7 @@ Can be used in `/template/page_nav.html`:
 `{:document.total_num_of_articles_in_list}` - The total number of articles in the list
 
 
-Can be used in `/template/post.html`:
+*Can be used in `/template/post.html`:*
 
 `{:post.title}` - The title of the post
 
@@ -112,7 +112,7 @@ Can be used in `/template/post.html`:
 `{:post.modify_time}` - The last update time of the post
 
 
-Can be used in `/template/page.html`:
+*Can be used in `/template/page.html`:*
 
 `{:page.title}` - The title of the page
 
@@ -127,7 +127,7 @@ Can be used in `/template/page.html`:
 `{:page.modify_time}` - The last update time of the page
 
 
-Can be used in `/template/summary.html`:
+*Can be used in `/template/summary.html`:*
 
 `{:summary.title}` - The title of the post in list
 
@@ -141,6 +141,7 @@ Can be used in `/template/summary.html`:
 
 `{:summary.modify_time}` - The last update time of the post in list
 
+
 To access a centain page number of a list, use the URL query `?page=PAGE_NUM`
 
 To add a search filter, use URL queries like `?keyword=KEYWORD&time_range=START_TIMESTAMP-END_TIMESTAMP`
@@ -153,7 +154,7 @@ Search filters current supports:
 
 ## Build
 
-You need Rust 1.56 or above to compile hummingbird.
+Rust 1.56 or above is required to compile hummingbird.
 
 ```bash
 $ git clone https://github.com/EAimTY/hummingbird && cd hummingbird
@@ -165,9 +166,10 @@ $ cargo build --release
 - Built-in TLS support
 - Multiple income socket support
 - Full evaluate-on-write template-applying
+- Read post / page properties from file content
 - Rewrite the route table structure
 - Longpoll database updating
-- More template APIs
+- More template parameters
 - More search filters
 - ...
 
